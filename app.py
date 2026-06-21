@@ -1,7 +1,9 @@
 import os
 import io
 import json
+import bcrypt
 from flask import Flask, render_template, request, redirect, url_for, send_file, flash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
 from config import Config
 from reportlab.lib.pagesizes import A4
@@ -16,6 +18,47 @@ app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = os.environ.get("SECRET_KEY", "MarwenSuperSecret2025")
 mail = Mail(app)
+
+# ── Auth ──
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
+login_manager.login_message = "Please log in to access this page."
+login_manager.login_message_category = "warning"
+
+_ACCOUNTS = {
+    "marwen": os.environ.get("ADMIN_PASSWORD_HASH", ""),
+    "backup": os.environ.get("BACKUP_PASSWORD_HASH", ""),
+}
+
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    if user_id in _ACCOUNTS:
+        return User(user_id)
+    return None
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+    if request.method == "POST":
+        username = request.form.get("username", "").strip().lower()
+        password = request.form.get("password", "").encode()
+        stored_hash = _ACCOUNTS.get(username, "").encode()
+        if stored_hash and bcrypt.checkpw(password, stored_hash):
+            login_user(User(username), remember=True)
+            return redirect(request.args.get("next") or url_for("dashboard"))
+        flash("Invalid username or password.", "danger")
+    return render_template("login.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
 
 CAMPUSES = {"EISG": "K12 School", "EIPSG": "Preschool", "HQ": "HQ Team", "EIEA": "HQ Team"}
 ASSET_TYPES = ["Laptop", "Monitor", "iPad", "Desktop PC", "IP Phone"]
@@ -204,6 +247,7 @@ def scalar(sql, params=None):
 # DASHBOARD
 # ─────────────────────────────────────────────
 @app.route("/")
+@login_required
 def dashboard():
     total = scalar("SELECT COUNT(*) FROM assets")
     by_type = {r["asset_type"]: r["cnt"] for r in query("SELECT asset_type, COUNT(*) cnt FROM assets GROUP BY asset_type")}
@@ -227,6 +271,7 @@ def dashboard():
 # ASSETS LIST
 # ─────────────────────────────────────────────
 @app.route("/assets")
+@login_required
 def assets():
     asset_type = request.args.get("type", "")
     campus     = request.args.get("campus", "")
@@ -255,6 +300,7 @@ def assets():
 # ADD / EDIT ASSET
 # ─────────────────────────────────────────────
 @app.route("/assets/add", methods=["GET", "POST"])
+@login_required
 def add_asset():
     if request.method == "POST":
         f = request.form
@@ -277,6 +323,7 @@ def add_asset():
 
 
 @app.route("/assets/<int:asset_id>/edit", methods=["GET", "POST"])
+@login_required
 def edit_asset(asset_id):
     if request.method == "POST":
         f = request.form
@@ -302,6 +349,7 @@ def edit_asset(asset_id):
 
 
 @app.route("/assets/<int:asset_id>/delete", methods=["POST"])
+@login_required
 def delete_asset(asset_id):
     execute("DELETE FROM assets WHERE id=:id", {"id": asset_id})
     flash("Asset deleted.", "info")
@@ -309,6 +357,7 @@ def delete_asset(asset_id):
 
 
 @app.route("/assets/<int:asset_id>")
+@login_required
 def asset_detail(asset_id):
     rows = query("SELECT * FROM assets WHERE id=:id", {"id": asset_id})
     asset = rows[0] if rows else None
@@ -320,6 +369,7 @@ def asset_detail(asset_id):
 # HANDOVER FORM
 # ─────────────────────────────────────────────
 @app.route("/handover", methods=["GET", "POST"])
+@login_required
 def handover_form():
     if request.method == "POST":
         f = request.form
@@ -357,12 +407,14 @@ def handover_form():
 # RECORDS
 # ─────────────────────────────────────────────
 @app.route("/records")
+@login_required
 def records():
     rows = query("SELECT * FROM handover ORDER BY id DESC")
     return render_template("records.html", rows=rows)
 
 
 @app.route("/records/<int:record_id>/pdf")
+@login_required
 def generate_pdf(record_id):
     rows = query("SELECT * FROM handover WHERE id=:id", {"id": record_id})
     if not rows:

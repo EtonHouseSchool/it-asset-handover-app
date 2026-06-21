@@ -1,7 +1,9 @@
 Flask
+Flask-Login
 Flask-Mail
 gunicorn
 reportlab
 openpyxl
 psycopg2-binary
 SQLAlchemy
+bcrypt

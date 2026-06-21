@@ -276,8 +276,14 @@
     </div>
   </div>
 
-  <div class="sidebar-footer">
-    © 2025 EtonHouse International<br/>IT Department
+    <div class="sidebar-footer">
+    <div style="margin-bottom:10px; color:rgba(255,255,255,0.6); font-size:12px;">
+      <i class="bi bi-person-circle me-1"></i>{{ current_user.id if current_user.is_authenticated else '' }}
+    </div>
+    <a href="{{ url_for('logout') }}" style="color:rgba(255,255,255,0.5); font-size:11px; text-decoration:none;">
+      <i class="bi bi-box-arrow-right me-1"></i>Sign Out
+    </a>
+    <div style="margin-top:10px;">© 2025 EtonHouse International<br/>IT Department</div>
   </div>
 </nav>
 
