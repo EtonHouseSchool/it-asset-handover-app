@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Submitted — IT Asset Manager{% endblock %}
+{% block topbar_title %}Handover Submitted{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center" style="min-height: 60vh;">
+  <div class="text-center">
+    <div style="width:90px; height:90px; background:#dcfce7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px; font-size:40px; color:#16a34a;">
+      <i class="bi bi-check2-circle"></i>
+    </div>
+    <h2 style="color:var(--primary); font-weight:800; margin-bottom:8px;">Handover Submitted!</h2>
+    <p style="color:var(--text-muted); font-size:15px; max-width:400px; margin:0 auto 28px;">
+      The IT asset handover has been recorded successfully. The IT team has been notified by email.
+    </p>
+    <div class="d-flex gap-3 justify-content-center">
+      <a href="{{ url_for('handover_form') }}" class="btn-primary-custom" style="padding:12px 24px;">
+        <i class="bi bi-plus-lg me-1"></i> New Handover
+      </a>
+      <a href="{{ url_for('records') }}" class="btn btn-outline-secondary" style="border-radius:10px; padding:12px 24px;">
+        <i class="bi bi-journal-text me-1"></i> View Records
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary" style="border-radius:10px; padding:12px 24px;">
+        <i class="bi bi-grid me-1"></i> Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

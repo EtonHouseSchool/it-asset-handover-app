@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if asset else 'Add' }} Asset — IT Asset Manager{% endblock %}
+{% block topbar_title %}{{ 'Edit Asset' if asset else 'Add New Asset' }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>{{ 'Edit Asset' if asset else 'Add New Asset' }}</h1>
+    <p>{{ 'Update the asset details below' if asset else 'Register a new IT asset into the system' }}</p>
+  </div>
+  <a href="{{ url_for('assets') }}" class="btn btn-outline-secondary" style="border-radius:10px; padding:9px 16px;">
+    <i class="bi bi-arrow-left me-1"></i> Back to Assets
+  </a>
+</div>
+
+<form method="POST">
+<div class="row g-4">
+  <div class="col-lg-8">
+
+    <div class="card mb-4">
+      <div class="card-header"><i class="bi bi-box-seam me-2" style="color:var(--accent)"></i>Asset Details</div>
+      <div class="card-body p-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Asset Type <span class="text-danger">*</span></label>
+            <select name="asset_type" class="form-select" required>
+              <option value="">Select type…</option>
+              {% for t in asset_types %}
+              <option value="{{ t }}" {% if asset and asset['asset_type'] == t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Serial Number</label>
+            <input type="text" name="serial_number" class="form-control" placeholder="e.g. PF-5FAWEL"
+                   value="{{ asset['serial_number'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Model / Product Name</label>
+            <input type="text" name="model_name" class="form-control" placeholder="e.g. HP ProBook 450"
+                   value="{{ asset['model_name'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Part Number (iPads)</label>
+            <input type="text" name="part_number" class="form-control" placeholder="e.g. MD4G4AB/A"
+                   value="{{ asset['part_number'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Batch</label>
+            <input type="text" name="batch" class="form-control" placeholder="e.g. Batch 3"
+                   value="{{ asset['batch'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              {% for s in statuses %}
+              <option value="{{ s }}" {% if asset and asset['status'] == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><i class="bi bi-person-fill me-2" style="color:var(--accent)"></i>Assignment</div>
+      <div class="card-body p-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Assigned To / Owner</label>
+            <input type="text" name="assigned_to" class="form-control" placeholder="Full name"
+                   value="{{ asset['assigned_to'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Campus</label>
+            <select name="campus" class="form-select">
+              <option value="">Select campus…</option>
+              {% for code, name in campuses.items() %}
+              <option value="{{ code }}" {% if asset and asset['campus'] == code %}selected{% endif %}>{{ name }} ({{ code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Issued Date</label>
+            <input type="date" name="issued_date" class="form-control"
+                   value="{{ asset['issued_date'][:10] if asset and asset['issued_date'] else '' }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Location / Position</label>
+            <input type="text" name="location" class="form-control" placeholder="e.g. K12 Library"
+                   value="{{ asset['location'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email Sent</label>
+            <input type="text" name="email_sent" class="form-control" placeholder="Done / email"
+                   value="{{ asset['email_sent'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Acknowledgement</label>
+            <input type="text" name="acknowledgement" class="form-control" placeholder="Done / Yes"
+                   value="{{ asset['acknowledgement'] if asset else '' }}"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4" id="phone-section" style="display:none;">
+      <div class="card-header"><i class="bi bi-telephone-fill me-2" style="color:var(--accent)"></i>IP Phone Details</div>
+      <div class="card-body p-4">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">IP Address</label>
+            <input type="text" name="ip_address" class="form-control" placeholder="10.200.40.x"
+                   value="{{ asset['ip_address'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Extension</label>
+            <input type="text" name="extension" class="form-control" placeholder="100"
+                   value="{{ asset['extension'] if asset else '' }}"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Credentials</label>
+            <input type="text" name="credentials" class="form-control" placeholder="admin, password"
+                   value="{{ asset['credentials'] if asset else '' }}"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-chat-left-text me-2" style="color:var(--accent)"></i>Remarks</div>
+      <div class="card-body p-4">
+        <textarea name="remarks" class="form-control" rows="3" placeholder="Any notes or remarks…">{{ asset['remarks'] if asset else '' }}</textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3" style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color:#fff; border-radius:16px;">
+      <div class="card-body p-4">
+        <h6 class="mb-3" style="color:rgba(255,255,255,0.7); font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">
+          <i class="bi bi-info-circle me-1"></i> Quick Guide
+        </h6>
+        <ul style="font-size:13px; padding-left:16px; color:rgba(255,255,255,0.85); margin:0;">
+          <li class="mb-2">EISG = K12 School</li>
+          <li class="mb-2">EIPSG = Preschool</li>
+          <li class="mb-2">HQ = Head Office</li>
+          <li class="mb-2">Set status to <strong>In Store</strong> for unassigned assets</li>
+          <li>Batch tracks which procurement batch</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="d-grid gap-2">
+      <button type="submit" class="btn-primary-custom justify-content-center" style="padding: 13px;">
+        <i class="bi bi-{{ 'floppy' if asset else 'plus-lg' }} me-1"></i>
+        {{ 'Save Changes' if asset else 'Add Asset' }}
+      </button>
+      <a href="{{ url_for('assets') }}" class="btn btn-outline-secondary" style="border-radius:10px; padding:12px; text-align:center;">
+        Cancel
+      </a>
+    </div>
+  </div>
+</div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const typeSelect = document.querySelector('[name="asset_type"]');
+const phoneSection = document.getElementById('phone-section');
+function togglePhone() {
+  phoneSection.style.display = typeSelect.value === 'IP Phone' ? 'block' : 'none';
+}
+typeSelect.addEventListener('change', togglePhone);
+togglePhone();
+</script>
+{% endblock %}

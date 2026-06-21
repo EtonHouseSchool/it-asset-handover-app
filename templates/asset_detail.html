@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Asset #{{ asset['id'] }} — IT Asset Manager{% endblock %}
+{% block topbar_title %}Asset Detail{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Asset #{{ asset['id'] }}</h1>
+    <p>{{ asset['asset_type'] }} — {{ asset['serial_number'] or 'No serial' }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('edit_asset', asset_id=asset['id']) }}" class="btn-primary-custom">
+      <i class="bi bi-pencil"></i> Edit
+    </a>
+    <a href="{{ url_for('assets') }}" class="btn btn-outline-secondary" style="border-radius:10px; padding:9px 16px;">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card mb-4">
+      <div class="card-header"><i class="bi bi-box me-2" style="color:var(--accent)"></i>Asset Information</div>
+      <div class="card-body p-0">
+        <table class="table mb-0" style="font-size:14px;">
+          {% set rows = [
+            ('Asset Type', asset['asset_type']),
+            ('Serial Number', asset['serial_number']),
+            ('Part Number', asset['part_number']),
+            ('Model', asset['model_name']),
+            ('Batch', asset['batch']),
+            ('Status', asset['status']),
+            ('Assigned To', asset['assigned_to']),
+            ('Campus', campus_labels.get(asset['campus'], asset['campus'])),
+            ('Issued Date', asset['issued_date']),
+            ('Location', asset['location']),
+            ('Email Sent', asset['email_sent']),
+            ('Acknowledgement', asset['acknowledgement']),
+            ('Remarks', asset['remarks']),
+          ] %}
+          {% for label, value in rows %}
+          {% if value %}
+          <tr>
+            <td style="width:40%; color:var(--text-muted); font-weight:500; padding:12px 20px; background:#f8fafc; border-right:1px solid var(--border);">{{ label }}</td>
+            <td style="padding:12px 20px;">
+              {% if label == 'Status' %}
+                {% set s = value.replace(' ','').replace('/','') %}
+                <span class="badge-status status-{{ s }}">{{ value }}</span>
+              {% elif label == 'Campus' %}
+                <span class="campus-badge campus-{{ asset['campus'] }}">{{ value }}</span>
+              {% else %}
+                {{ value }}
+              {% endif %}
+            </td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    {% if asset['ip_address'] %}
+    <div class="card">
+      <div class="card-header"><i class="bi bi-telephone me-2" style="color:var(--accent)"></i>IP Phone Details</div>
+      <div class="card-body p-0">
+        <table class="table mb-0" style="font-size:14px;">
+          <tr>
+            <td style="width:40%; background:#f8fafc; padding:12px 20px; color:var(--text-muted); font-weight:500;">IP Address</td>
+            <td style="padding:12px 20px; font-family:monospace;">{{ asset['ip_address'] }}</td>
+          </tr>
+          <tr>
+            <td style="width:40%; background:#f8fafc; padding:12px 20px; color:var(--text-muted); font-weight:500;">Extension</td>
+            <td style="padding:12px 20px;">{{ asset['extension'] or '—' }}</td>
+          </tr>
+          <tr>
+            <td style="width:40%; background:#f8fafc; padding:12px 20px; color:var(--text-muted); font-weight:500;">Credentials</td>
+            <td style="padding:12px 20px; font-family:monospace;">{{ asset['credentials'] or '—' }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3" style="background: linear-gradient(135deg, var(--primary), var(--primary-light));">
+      <div class="card-body p-4 text-white text-center">
+        {% set icons = {'Laptop':'bi-laptop','Monitor':'bi-display','iPad':'bi-tablet','Desktop PC':'bi-pc-display','IP Phone':'bi-telephone-fill'} %}
+        <i class="bi {{ icons.get(asset['asset_type'], 'bi-box') }}" style="font-size:48px; opacity:0.85;"></i>
+        <div style="font-size:20px; font-weight:700; margin-top:12px;">{{ asset['asset_type'] }}</div>
+        <div style="font-family:monospace; font-size:13px; opacity:0.7; margin-top:4px;">{{ asset['serial_number'] or 'No serial' }}</div>
+        <div class="mt-3">
+          {% set s = asset['status'].replace(' ','').replace('/','') %}
+          <span class="badge-status status-{{ s }}" style="font-size:13px; padding: 6px 16px;">{{ asset['status'] }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-grid gap-2">
+      <a href="{{ url_for('handover_form') }}" class="btn-accent-custom justify-content-center" style="padding:13px;">
+        <i class="bi bi-arrow-left-right me-1"></i> Create Handover for This Asset
+      </a>
+      <form method="POST" action="{{ url_for('delete_asset', asset_id=asset['id']) }}" onsubmit="return confirm('Permanently delete this asset?')">
+        <button type="submit" class="btn btn-outline-danger w-100" style="border-radius:10px; padding:12px;">
+          <i class="bi bi-trash me-1"></i> Delete Asset
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
