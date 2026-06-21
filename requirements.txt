@@ -2,3 +2,6 @@ Flask
 Flask-Mail
 gunicorn
 reportlab
+openpyxl
+psycopg2-binary
+SQLAlchemy
