@@ -4,114 +4,197 @@
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  .hero-banner {
+    background: linear-gradient(130deg, #0c2340 0%, #14375C 50%, #1a4f7a 100%);
+    border-radius: 20px; padding: 32px 36px; margin-bottom: 24px;
+    position: relative; overflow: hidden;
+  }
+  .hero-banner::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 280px; height: 280px; border-radius: 50%; background: rgba(200,150,62,0.10);
+  }
+  .hero-banner::after {
+    content: ''; position: absolute; bottom: -40px; right: 160px;
+    width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.04);
+  }
+  .hero-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .hero-sub { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 0; }
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px; padding: 4px 12px; font-size: 11.5px;
+    color: rgba(255,255,255,0.8); margin-bottom: 14px;
+  }
+  .hero-pill i { color: #C8963E; }
+  .stat-card-inner { display: flex; flex-direction: column; gap: 3px; }
+  .stat-trend { font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; margin-top: 4px; }
+  .stat-trend.up   { color: #10b981; }
+  .stat-trend.info { color: #3b82f6; }
+  .chart-card .card-header { display: flex; align-items: center; justify-content: space-between; }
+  .chart-card .card-header .header-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .campus-card {
+    border-radius: 16px; padding: 20px 24px; background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none; display: block; border: none;
+  }
+  .campus-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.1); text-decoration: none; }
+  .campus-card .c-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 4px; }
+  .campus-card .c-name { font-size: 17px; font-weight: 800; color: var(--primary); }
+  .campus-card .c-count { font-size: 32px; font-weight: 800; line-height: 1; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-size: 15px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .section-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .view-all-link { font-size: 12.5px; color: var(--primary); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px; opacity: 0.7; transition: opacity 0.2s; }
+  .view-all-link:hover { opacity: 1; color: var(--primary); }
+</style>
 {% endblock %}
 
 {% block content %}
 
-<div class="card mb-4" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: 20px; overflow: hidden; position: relative;">
-  <div class="card-body p-4" style="position:relative; z-index:1;">
-    <div class="row align-items-center">
-      <div class="col-md-8">
-        <h2 class="text-white mb-1" style="font-size:24px; font-weight:800;">IT Asset Management Platform</h2>
-        <p class="mb-0" style="color:rgba(255,255,255,0.75); font-size:14px;">
-          EtonHouse International School — K12 · Preschool · HQ Team
-        </p>
+<div class="hero-banner mb-4">
+  <div class="row align-items-center" style="position:relative;z-index:1;">
+    <div class="col-md-8">
+      <div class="hero-pill">
+        <i class="bi bi-circle-fill" style="font-size:7px;"></i> Live Dashboard
       </div>
-      <div class="col-md-4 text-md-end mt-3 mt-md-0">
-        <a href="{{ url_for('add_asset') }}" class="btn-accent-custom me-2">
-          <i class="bi bi-plus-lg"></i> Add Asset
-        </a>
-        <a href="{{ url_for('handover_form') }}" class="btn btn-outline-light btn-sm px-3 py-2">
-          <i class="bi bi-arrow-left-right me-1"></i> Handover
-        </a>
-      </div>
+      <div class="hero-title">IT Asset Management Platform</div>
+      <div class="hero-sub">EtonHouse International School — K12 · Preschool · HQ Team · Riyadh, KSA</div>
     </div>
-  </div>
-  <div style="position:absolute; right:-30px; top:-30px; width:200px; height:200px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
-  <div style="position:absolute; right:60px; top:20px; width:100px; height:100px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
-</div>
-
-<div class="row g-3 mb-4">
-  <div class="col-6 col-lg-3">
-    <div class="stat-card">
-      <div class="stat-icon" style="background:#dbeafe; color:#1d4ed8;"><i class="bi bi-collection-fill"></i></div>
-      <div><div class="stat-value">{{ total }}</div><div class="stat-label">Total Assets</div></div>
-    </div>
-  </div>
-  <div class="col-6 col-lg-3">
-    <div class="stat-card">
-      <div class="stat-icon" style="background:#dcfce7; color:#16a34a;"><i class="bi bi-laptop"></i></div>
-      <div><div class="stat-value">{{ by_type.get('Laptop', 0) }}</div><div class="stat-label">Laptops</div></div>
-    </div>
-  </div>
-  <div class="col-6 col-lg-3">
-    <div class="stat-card">
-      <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;"><i class="bi bi-tablet"></i></div>
-      <div><div class="stat-value">{{ by_type.get('iPad', 0) }}</div><div class="stat-label">iPads</div></div>
-    </div>
-  </div>
-  <div class="col-6 col-lg-3">
-    <div class="stat-card">
-      <div class="stat-icon" style="background:#fef3c7; color:#d97706;"><i class="bi bi-display"></i></div>
-      <div><div class="stat-value">{{ by_type.get('Monitor', 0) + by_type.get('Desktop PC', 0) }}</div><div class="stat-label">Monitors & Desktops</div></div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0" style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+      <a href="{{ url_for('add_asset') }}" class="btn-accent-custom">
+        <i class="bi bi-plus-lg"></i> Add Asset
+      </a>
+      <a href="{{ url_for('handover_form') }}" class="btn btn-outline-light btn-sm px-3" style="border-radius:10px;font-weight:600;font-size:13.5px;">
+        <i class="bi bi-arrow-left-right me-1"></i> Handover
+      </a>
     </div>
   </div>
 </div>
 
 <div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe); color:#1d4ed8;">
+        <i class="bi bi-collection-fill"></i>
+      </div>
+      <div class="stat-card-inner">
+        <div class="stat-value counter" data-target="{{ total }}">0</div>
+        <div class="stat-label">Total Assets</div>
+        <div class="stat-trend info"><i class="bi bi-building"></i> 3 campuses</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#dcfce7,#bbf7d0); color:#16a34a;">
+        <i class="bi bi-laptop"></i>
+      </div>
+      <div class="stat-card-inner">
+        <div class="stat-value counter" data-target="{{ by_type.get('Laptop', 0) }}">0</div>
+        <div class="stat-label">Laptops</div>
+        <div class="stat-trend up"><i class="bi bi-check-circle-fill"></i> Fully tracked</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#e0e7ff,#c7d2fe); color:#4338ca;">
+        <i class="bi bi-tablet"></i>
+      </div>
+      <div class="stat-card-inner">
+        <div class="stat-value counter" data-target="{{ by_type.get('iPad', 0) }}">0</div>
+        <div class="stat-label">iPads</div>
+        <div class="stat-trend up"><i class="bi bi-check-circle-fill"></i> Fully tracked</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a); color:#d97706;">
+        <i class="bi bi-display"></i>
+      </div>
+      <div class="stat-card-inner">
+        <div class="stat-value counter" data-target="{{ by_type.get('Monitor', 0) + by_type.get('Desktop PC', 0) }}">0</div>
+        <div class="stat-label">Monitors & Desktops</div>
+        <div class="stat-trend info"><i class="bi bi-building"></i> Multi-campus</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
   <div class="col-lg-4">
-    <div class="card h-100">
-      <div class="card-header"><i class="bi bi-pie-chart-fill me-2" style="color:var(--accent)"></i>Assets by Type</div>
+    <div class="card chart-card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-pie-chart-fill me-2" style="color:var(--accent)"></i>Assets by Type</span>
+        <div class="header-icon" style="background:#fef3c7; color:#d97706;"><i class="bi bi-collection"></i></div>
+      </div>
       <div class="card-body d-flex align-items-center justify-content-center p-3">
-        <canvas id="chartType" style="max-height:220px;"></canvas>
+        <canvas id="chartType" style="max-height:210px;"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card chart-card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-buildings-fill me-2" style="color:var(--accent)"></i>By Campus</span>
+        <div class="header-icon" style="background:#dbeafe; color:#1d4ed8;"><i class="bi bi-building"></i></div>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center p-3">
+        <canvas id="chartCampus" style="max-height:210px;"></canvas>
       </div>
     </div>
   </div>
   <div class="col-lg-4">
     <div class="card h-100">
-      <div class="card-header"><i class="bi bi-buildings-fill me-2" style="color:var(--accent)"></i>By Campus</div>
-      <div class="card-body d-flex align-items-center justify-content-center p-3">
-        <canvas id="chartCampus" style="max-height:220px;"></canvas>
+      <div class="card-header">
+        <span><i class="bi bi-bar-chart-fill me-2" style="color:var(--accent)"></i>Status Overview</span>
       </div>
-    </div>
-  </div>
-  <div class="col-lg-4">
-    <div class="card h-100">
-      <div class="card-header"><i class="bi bi-bar-chart-fill me-2" style="color:var(--accent)"></i>Status Overview</div>
-      <div class="card-body p-3">
+      <div class="card-body p-4">
         {% for status, count in by_status.items() %}
-          {% set pct = ((count / total) * 100)|int if total > 0 else 0 %}
+          {% set pct = ((count / total) * 100)|round(1) if total > 0 else 0 %}
+          {% set color = '#10b981' if status == 'Assigned' else '#3b82f6' if status == 'In Store' else '#ef4444' if 'Lost' in status else '#f59e0b' %}
           <div class="mb-3">
             <div class="d-flex justify-content-between mb-1">
-              <span style="font-size:13px; font-weight:500;">{{ status }}</span>
-              <span style="font-size:13px; color:var(--text-muted);">{{ count }}</span>
+              <span style="font-size:13px; font-weight:600;">{{ status }}</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:11px;color:var(--text-muted);">{{ pct }}%</span>
+                <span style="font-size:13px; font-weight:700; color:{{ color }};">{{ count }}</span>
+              </div>
             </div>
-            <div class="progress" style="height:7px; border-radius:10px;">
-              <div class="progress-bar" role="progressbar" style="width:{{ pct }}%; background:{% if status == 'Assigned' %}#10b981{% elif status == 'In Store' %}#3b82f6{% elif 'Lost' in status %}#ef4444{% else %}#f59e0b{% endif %}; border-radius:10px;"></div>
+            <div style="height:6px; background:#f1f5f9; border-radius:10px; overflow:hidden;">
+              <div style="width:{{ pct }}%; height:100%; background:{{ color }}; border-radius:10px;"></div>
             </div>
           </div>
         {% endfor %}
+        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+          <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted); margin-bottom:10px;">Assignment Rate</div>
+          {% set assigned = by_status.get('Assigned', 0) %}
+          {% set rate = ((assigned / total) * 100)|round(0)|int if total > 0 else 0 %}
+          <div style="font-size:32px; font-weight:800; color:var(--primary); line-height:1;">{{ rate }}<span style="font-size:18px;">%</span></div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">{{ assigned }} of {{ total }} assets deployed</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <div class="row g-3 mb-4">
-  {% for code, name in [('EISG','K12 School'), ('EIPSG','Preschool'), ('HQ','HQ Team')] %}
+  {% for code, name, color, icon in [('EISG','K12 School','#3b82f6','bi-building'), ('EIPSG','Preschool','#10b981','bi-house-heart'), ('HQ','HQ Team','#C8963E','bi-briefcase')] %}
   <div class="col-md-4">
-    <a href="{{ url_for('assets', campus=code) }}" style="text-decoration:none;">
-      <div class="card" style="border-left: 4px solid {% if code=='EISG' %}#3b82f6{% elif code=='EIPSG' %}#10b981{% else %}#f59e0b{% endif %};">
-        <div class="card-body py-3 px-4">
-          <div class="d-flex align-items-center justify-content-between">
-            <div>
-              <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); font-weight:600;">Campus</div>
-              <div style="font-size:17px; font-weight:700; color:var(--primary);">{{ name }}</div>
-            </div>
-            <div style="font-size:28px; font-weight:800; color:{% if code=='EISG' %}#3b82f6{% elif code=='EIPSG' %}#10b981{% else %}#f59e0b{% endif %};">
-              {{ campus_display.get(name, 0) }}
-            </div>
-          </div>
+    <a href="{{ url_for('assets', campus=code) }}" class="campus-card" style="border-left: 4px solid {{ color }};">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <div class="c-label"><i class="bi {{ icon }} me-1"></i> Campus</div>
+          <div class="c-name">{{ name }}</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">View all assets →</div>
         </div>
+        <div class="c-count" style="color:{{ color }};">{{ campus_display.get(name, 0) }}</div>
       </div>
     </a>
   </div>
@@ -119,15 +202,25 @@
 </div>
 
 <div class="card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-clock-history me-2" style="color:var(--accent)"></i>Recently Added Assets</span>
-    <a href="{{ url_for('assets') }}" style="font-size:13px; color:var(--primary); text-decoration:none; font-weight:500;">View All <i class="bi bi-arrow-right"></i></a>
+  <div class="card-header">
+    <div class="section-header mb-0">
+      <div class="section-title">
+        <div class="dot"></div>
+        Recently Added Assets
+      </div>
+      <a href="{{ url_for('assets') }}" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
+    </div>
   </div>
   <div class="card-body p-0">
     <table class="table table-custom mb-0">
       <thead>
         <tr>
-          <th>Type</th><th>Serial / ID</th><th>Assigned To</th><th>Campus</th><th>Status</th><th></th>
+          <th>Type</th>
+          <th>Serial / ID</th>
+          <th>Assigned To</th>
+          <th>Campus</th>
+          <th>Status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -135,21 +228,23 @@
         <tr>
           <td>
             {% set icons = {'Laptop':'bi-laptop','Monitor':'bi-display','iPad':'bi-tablet','Desktop PC':'bi-pc-display','IP Phone':'bi-telephone-fill'} %}
-            {% set colors_map = {'Laptop':'icon-Laptop','Monitor':'icon-Monitor','iPad':'icon-iPad','Desktop PC':'icon-Desktop','IP Phone':'icon-Phone'} %}
-            <span class="asset-icon {{ colors_map.get(a['asset_type'], '') }}">
-              <i class="bi {{ icons.get(a['asset_type'], 'bi-box') }}"></i>
-            </span>
-            <span style="font-size:13px; font-weight:500; margin-left:8px;">{{ a['asset_type'] }}</span>
+            {% set cls = {'Laptop':'icon-Laptop','Monitor':'icon-Monitor','iPad':'icon-iPad','Desktop PC':'icon-Desktop','IP Phone':'icon-Phone'} %}
+            <div style="display:flex;align-items:center;gap:9px;">
+              <span class="asset-icon {{ cls.get(a['asset_type'], '') }}">
+                <i class="bi {{ icons.get(a['asset_type'], 'bi-box') }}"></i>
+              </span>
+              <span style="font-size:13.5px; font-weight:600;">{{ a['asset_type'] }}</span>
+            </div>
           </td>
-          <td style="font-family:monospace; font-size:12px; color:var(--text-muted);">{{ a['serial_number'] or '—' }}</td>
-          <td style="font-weight:500;">{{ a['assigned_to'] or '—' }}</td>
+          <td><span style="font-family:monospace; font-size:12px; background:#f8fafc; padding:3px 8px; border-radius:6px; color:var(--primary); font-weight:600;">{{ a['serial_number'] or '—' }}</span></td>
+          <td style="font-weight:500; font-size:13.5px;">{{ a['assigned_to'] or '—' }}</td>
           <td><span class="campus-badge campus-{{ a['campus'] }}">{{ a['campus'] }}</span></td>
           <td>
             {% set s = a['status'].replace(' ','').replace('/','') %}
             <span class="badge-status status-{{ s }}">{{ a['status'] }}</span>
           </td>
           <td>
-            <a href="{{ url_for('edit_asset', asset_id=a['id']) }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:12px;">
+            <a href="{{ url_for('edit_asset', asset_id=a['id']) }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:12px; padding:4px 10px;">
               <i class="bi bi-pencil"></i>
             </a>
           </td>
@@ -164,20 +259,39 @@
 
 {% block scripts %}
 <script>
-const typeData = {{ by_type_json|safe }};
+const typeData   = {{ by_type_json|safe }};
 const campusData = {{ campus_json|safe }};
-const palette = ['#14375C','#C8963E','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'];
+const palette = ['#14375C','#C8963E','#3b82f6','#10b981','#8b5cf6','#f59e0b','#ef4444'];
+
+const chartOpts = () => ({
+  cutout: '68%',
+  plugins: {
+    legend: { position: 'bottom', labels: { font: { size: 11, family: 'Inter', weight: '600' }, padding: 14, boxWidth: 10, boxHeight: 10 } },
+    tooltip: { backgroundColor: '#0c2340', titleFont: { family: 'Inter', size: 12 }, bodyFont: { family: 'Inter', size: 12 }, padding: 10, cornerRadius: 8 }
+  }
+});
 
 new Chart(document.getElementById('chartType'), {
   type: 'doughnut',
-  data: { labels: Object.keys(typeData), datasets: [{ data: Object.values(typeData), backgroundColor: palette, borderWidth: 0 }] },
-  options: { cutout: '65%', plugins: { legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } } } }
+  data: { labels: Object.keys(typeData), datasets: [{ data: Object.values(typeData), backgroundColor: palette, borderWidth: 2, borderColor: '#fff', hoverBorderWidth: 3 }] },
+  options: chartOpts()
 });
 
 new Chart(document.getElementById('chartCampus'), {
   type: 'doughnut',
-  data: { labels: Object.keys(campusData), datasets: [{ data: Object.values(campusData), backgroundColor: ['#3b82f6','#10b981','#f59e0b'], borderWidth: 0 }] },
-  options: { cutout: '65%', plugins: { legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16 } } } }
+  data: { labels: Object.keys(campusData), datasets: [{ data: Object.values(campusData), backgroundColor: ['#10b981','#3b82f6','#C8963E'], borderWidth: 2, borderColor: '#fff', hoverBorderWidth: 3 }] },
+  options: chartOpts()
+});
+
+document.querySelectorAll('.counter').forEach(el => {
+  const target = parseInt(el.dataset.target);
+  let current = 0;
+  const step = Math.ceil(target / 40);
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current;
+    if (current >= target) clearInterval(timer);
+  }, 30);
 });
 </script>
 {% endblock %}
