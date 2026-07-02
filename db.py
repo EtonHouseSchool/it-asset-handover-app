@@ -89,6 +89,12 @@ def init_db():
                 created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
             )
         """))
+        # Migration: add approved_by if table existed before this column
+        try:
+            conn.execute(text("ALTER TABLE holiday_returns ADD COLUMN approved_by TEXT"))
+            conn.commit()
+        except Exception:
+            conn.rollback()
         conn.commit()
 
 
