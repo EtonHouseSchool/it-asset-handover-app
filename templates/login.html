@@ -17,6 +17,7 @@
       display: flex;
     }
 
+    /* ── Left decorative panel ── */
     .login-left {
       flex: 1;
       background: linear-gradient(160deg, #0d2845 0%, #14375C 45%, #1a4a73 100%);
@@ -44,19 +45,12 @@
       background: rgba(255,255,255,0.04);
     }
 
-    .left-logo-wrap {
-      background: #fff;
-      border-radius: 12px;
-      padding: 10px 16px;
-      display: inline-flex;
-      align-items: center;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      margin-bottom: 14px;
+    .left-logo img {
+      height: 52px;
+      filter: brightness(0) invert(1);
     }
-    .left-logo-wrap img { height: 36px; width: auto; display: block; }
-
     .left-brand-name {
-      font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 0.3px;
+      font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 0.3px; margin-top: 10px;
     }
     .left-brand-sub {
       font-size: 11px; color: rgba(255,255,255,0.45); text-transform: uppercase;
@@ -81,6 +75,7 @@
 
     .left-footer { font-size: 11px; color: rgba(255,255,255,0.28); position: relative; z-index: 1; }
 
+    /* ── Right form panel ── */
     .login-right {
       width: 490px;
       flex-shrink: 0;
@@ -158,9 +153,10 @@
 </head>
 <body>
 
+<!-- LEFT PANEL -->
 <div class="login-left">
   <div>
-    <div class="left-logo-wrap">
+    <div class="left-logo">
       <img src="{{ url_for('static', filename='logo.png') }}" alt="EtonHouse"/>
     </div>
     <div class="left-brand-name">EtonHouse International School</div>
@@ -172,7 +168,7 @@
     <p>A centralised platform to track, assign, and manage all IT equipment across K12, Preschool, and HQ campuses in Riyadh.</p>
     <div class="left-stats">
       <div>
-        <div class="left-stat-value">2</div>
+        <div class="left-stat-value">3</div>
         <div class="left-stat-label">Campuses</div>
       </div>
       <div>
@@ -187,12 +183,14 @@
   </div>
 
   <div class="left-footer">
-    © 2026 EtonHouse International School · IT Department · Riyadh, KSA
+    © 2025 EtonHouse International School · IT Department · Riyadh, KSA
   </div>
 </div>
 
+<!-- RIGHT PANEL -->
 <div class="login-right">
   <div class="login-form-wrap">
+
     <div class="login-heading">Welcome back</div>
     <div class="login-sub">Sign in to access the IT Asset Management Platform</div>
 
@@ -230,6 +228,7 @@
       <i class="bi bi-shield-check-fill"></i>
       <span>Restricted access — EtonHouse IT Department only. All sessions are logged and monitored.</span>
     </div>
+
   </div>
 </div>
 

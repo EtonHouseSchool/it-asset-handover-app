@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% block title %}Holiday Asset Returns — EtonHouse IT{% endblock %}
+{% block topbar_title %}Holiday Asset Returns{% endblock %}
+
+{% block head %}
+<style>
+  .holiday-hero {
+    background: linear-gradient(135deg, #0c2340 0%, #14375C 60%, #1a4a73 100%);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .holiday-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(200,150,62,0.1);
+  }
+  .holiday-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 30%;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .holiday-hero h1 {
+    font-size: 22px; font-weight: 800; color: #fff; margin: 0 0 6px;
+  }
+  .holiday-hero p {
+    font-size: 13px; color: rgba(255,255,255,0.55); margin: 0;
+  }
+  .holiday-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(200,150,62,0.18); color: var(--accent);
+    border: 1px solid rgba(200,150,62,0.35);
+    border-radius: 20px; padding: 3px 12px; font-size: 11px; font-weight: 700;
+    margin-bottom: 10px; letter-spacing: 0.3px;
+  }
+
+  /* Status badges for holiday */
+  .hstatus-pending  { background: #fef3c7; color: #92400e; }
+  .hstatus-exempt   { background: #dbeafe; color: #1d4ed8; }
+  .hstatus-returned { background: #dcfce7; color: #166534; }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; flex-shrink: 0;
+  }
+  .dot-pending  { background: #f59e0b; }
+  .dot-exempt   { background: #3b82f6; }
+  .dot-returned { background: #10b981; }
+
+  /* Progress bar */
+  .return-progress-wrap { margin-top: 6px; }
+  .return-progress-bar {
+    height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden;
+  }
+  .return-progress-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, #10b981, #34d399);
+    transition: width 0.6s ease;
+  }
+  .progress-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Table action buttons */
+  .btn-action {
+    padding: 5px 11px; border-radius: 7px; font-size: 12px; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn-mark-returned {
+    background: #dcfce7; color: #166534;
+  }
+  .btn-mark-returned:hover { background: #bbf7d0; }
+  .btn-mark-exempt {
+    background: #dbeafe; color: #1d4ed8;
+  }
+  .btn-mark-exempt:hover { background: #bfdbfe; }
+  .btn-mark-pending {
+    background: #fef3c7; color: #92400e;
+  }
+  .btn-mark-pending:hover { background: #fde68a; }
+
+  /* Filters bar */
+  .filters-bar {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 18px;
+  }
+  .filter-btn {
+    padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1.5px solid var(--border); background: #fff; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    border-color: var(--primary); background: var(--primary); color: #fff;
+  }
+  .filter-btn.f-pending.active  { border-color: #f59e0b; background: #fef3c7; color: #92400e; }
+  .filter-btn.f-exempt.active   { border-color: #3b82f6; background: #dbeafe; color: #1d4ed8; }
+  .filter-btn.f-returned.active { border-color: #10b981; background: #dcfce7; color: #166534; }
+
+  /* Email attached chip */
+  .email-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;
+    border-radius: 20px; padding: 2px 8px; font-size: 11px; max-width: 180px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .no-email { font-size: 11px; color: #cbd5e1; }
+
+  /* Deadline badge */
+  .deadline-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(239,68,68,0.08); color: #dc2626;
+    border: 1px solid rgba(239,68,68,0.2); border-radius: 8px;
+    padding: 4px 10px; font-size: 12px; font-weight: 600;
+  }
+
+  /* Staff name in table */
+  .staff-name { font-weight: 600; color: var(--primary); font-size: 13px; }
+  .asset-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+  /* Modal override */
+  .modal-content { border-radius: 18px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.18); }
+  .modal-header { border-bottom: 1px solid var(--border); padding: 20px 24px; }
+  .modal-body   { padding: 24px; }
+  .modal-footer { border-top: 1px solid var(--border); padding: 16px 24px; }
+  .modal-title  { font-weight: 800; font-size: 16px; color: var(--primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero banner -->
+<div class="holiday-hero">
+  <div class="holiday-pill">
+    <i class="bi bi-sun-fill"></i> Summer 2025
+  </div>
+  <h1>Holiday Asset Return Tracker</h1>
+  <p>Track IT asset returns before the holiday break · Deadline: <strong style="color:#fbbf24;">4th July 2025</strong></p>
+</div>
+
+<!-- Summary stats row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#f0f4f8; color:var(--primary);">
+        <i class="bi bi-boxes"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-label">Total Assets</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7; color:#92400e;">
+        <i class="bi bi-hourglass-split"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ pending }}</div>
+        <div class="stat-label">Pending</div>
+        {% if total > 0 %}
+        <div class="return-progress-wrap">
+          <div class="return-progress-bar">
+            <div class="return-progress-fill" style="width:{{ ((total - pending) / total * 100)|int }}%; background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dbeafe; color:#1d4ed8;">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ exempt }}</div>
+        <div class="stat-label">Authorised Exemptions</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dcfce7; color:#166534;">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ returned }}</div>
+        <div class="stat-label">Returned</div>
+        {% if total > 0 %}
+        <div class="return-progress-wrap">
+          <div class="return-progress-bar">
+            <div class="return-progress-fill" style="width:{{ (returned / total * 100)|int }}%;"></div>
+          </div>
+          <div class="progress-label">{{ (returned / total * 100)|int }}% complete</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Deadline + Send Reminder -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div class="deadline-badge">
+    <i class="bi bi-calendar-x-fill"></i> Return deadline: 4th July 2025
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <form method="POST" action="{{ url_for('holiday_send_reminder') }}" class="d-inline">
+      <button type="submit" class="btn-primary-custom"
+              onclick="return confirm('Send reminder email to ALL pending staff?')">
+        <i class="bi bi-envelope-fill"></i> Send Bulk Reminder
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Filter pills -->
+<div class="filters-bar">
+  <span class="text-muted" style="font-size:12px; font-weight:600;">Filter:</span>
+  <button class="filter-btn active" data-filter="all" onclick="filterTable('all', this)">
+    All <span class="ms-1 badge bg-secondary">{{ total }}</span>
+  </button>
+  <button class="filter-btn f-pending" data-filter="pending" onclick="filterTable('pending', this)">
+    Pending <span class="ms-1 badge" style="background:#f59e0b;">{{ pending }}</span>
+  </button>
+  <button class="filter-btn f-exempt" data-filter="exempt" onclick="filterTable('exempt', this)">
+    Exempt <span class="ms-1 badge" style="background:#3b82f6;">{{ exempt }}</span>
+  </button>
+  <button class="filter-btn f-returned" data-filter="returned" onclick="filterTable('returned', this)">
+    Returned <span class="ms-1 badge" style="background:#10b981;">{{ returned }}</span>
+  </button>
+</div>
+
+<!-- Assets table -->
+<div class="card">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <span><i class="bi bi-table me-2"></i>Assigned Assets — Summer 2025 Holiday</span>
+    <span class="text-muted" style="font-size:12px; font-weight:400;">{{ total }} asset(s)</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-custom mb-0" id="holiday-table">
+      <thead>
+        <tr>
+          <th>Staff Member</th>
+          <th>Asset</th>
+          <th>Serial / Model</th>
+          <th>Campus</th>
+          <th>Email Attached</th>
+          <th>Status</th>
+          <th>Notes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in assets %}
+        <tr data-status="{{ row.hr_status or 'pending' }}">
+          <td>
+            <div class="staff-name">{{ row.assigned_to or '—' }}</div>
+            {% if row.returned_date %}
+            <div class="asset-sub"><i class="bi bi-calendar-check"></i> {{ row.returned_date }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% set t = row.asset_type or '' %}
+            <span class="asset-icon me-1
+              {% if t == 'Laptop' %}icon-Laptop
+              {% elif t == 'Monitor' %}icon-Monitor
+              {% elif t == 'iPad' %}icon-iPad
+              {% elif t == 'Desktop PC' %}icon-Desktop
+              {% elif t == 'IP Phone' %}icon-Phone
+              {% else %}icon-Laptop{% endif %}">
+              <i class="bi bi-
+                {% if t == 'Laptop' %}laptop
+                {% elif t == 'Monitor' %}display
+                {% elif t == 'iPad' %}tablet
+                {% elif t == 'Desktop PC' %}pc-display
+                {% elif t == 'IP Phone' %}telephone-fill
+                {% else %}device-hdd{% endif %}">
+              </i>
+            </span>
+            {{ row.asset_type }}
+          </td>
+          <td>
+            <div style="font-size:13px;">{{ row.serial_number or '—' }}</div>
+            <div class="asset-sub">{{ row.model_name or '' }}</div>
+          </td>
+          <td>
+            {% if row.campus == 'EISG' %}
+              <span class="campus-badge campus-EISG">K12</span>
+            {% elif row.campus == 'EIPSG' %}
+              <span class="campus-badge campus-EIPSG">Preschool</span>
+            {% else %}
+              <span class="campus-badge campus-HQ">{{ row.campus or 'HQ' }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.staff_email %}
+              <span class="email-chip" title="{{ row.staff_email }}">
+                <i class="bi bi-envelope-check-fill"></i> {{ row.staff_email }}
+              </span>
+            {% else %}
+              <span class="no-email"><i class="bi bi-dash"></i> No email</span>
+            {% endif %}
+          </td>
+          <td>
+            {% set s = row.hr_status or 'pending' %}
+            <span class="badge-status hstatus-{{ s }}">
+              <span class="status-dot dot-{{ s }}"></span>
+              {{ s | capitalize }}
+            </span>
+            {% if row.reason %}
+            <div class="asset-sub mt-1" style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ row.reason }}">
+              {{ row.reason }}
+            </div>
+            {% endif %}
+          </td>
+          <td style="max-width:140px; font-size:12px; color:var(--text-muted);">
+            {{ row.hr_notes or '—' }}
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              {% if s != 'returned' %}
+              <button class="btn-action btn-mark-returned"
+                      onclick="quickUpdate({{ row.id }}, 'returned', '{{ row.assigned_to|replace("'","") }}')">
+                <i class="bi bi-check2-circle"></i> Returned
+              </button>
+              {% endif %}
+              {% if s != 'exempt' %}
+              <button class="btn-action btn-mark-exempt"
+                      onclick="openExemptModal({{ row.id }}, '{{ row.assigned_to|replace("'","") }}', '{{ row.staff_email or "" }}')">
+                <i class="bi bi-shield-plus"></i> Exempt
+              </button>
+              {% endif %}
+              {% if s != 'pending' %}
+              <button class="btn-action btn-mark-pending"
+                      onclick="quickUpdate({{ row.id }}, 'pending', '{{ row.assigned_to|replace("'","") }}')">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset
+              </button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-5" style="color:var(--text-muted);">
+            <i class="bi bi-inbox" style="font-size:32px; display:block; margin-bottom:10px;"></i>
+            No assigned assets found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Exempt Modal ── -->
+<div class="modal fade" id="exemptModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="bi bi-shield-plus me-2" style="color:var(--accent);"></i>
+          Authorise Exemption
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="exemptForm" action="">
+        <div class="modal-body">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">
+            Staff member <strong id="exemptStaffName"></strong> will be authorised to keep the asset over the holiday.
+          </p>
+          <div class="mb-3">
+            <label class="form-label">Staff Email <span style="color:#dc2626;">*</span></label>
+            <input type="email" name="staff_email" id="exemptEmail" class="form-control"
+                   placeholder="staff@etonhouse.edu.sa" required />
+            <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">
+              An authorisation confirmation will be emailed to this address.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Reason / Justification</label>
+            <textarea name="reason" class="form-control" rows="3"
+                      placeholder="e.g. Travelling for work, remote teaching commitments…"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Approved By</label>
+            <input type="text" name="approved_by" class="form-control"
+                   placeholder="e.g. Erwan / IT Manager" />
+          </div>
+          <div>
+            <label class="form-label">Notes</label>
+            <input type="text" name="notes" class="form-control"
+                   placeholder="Any additional notes…" />
+          </div>
+          <input type="hidden" name="status" value="exempt" />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn-accent-custom">
+            <i class="bi bi-shield-check-fill"></i> Authorise &amp; Notify Staff
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden quick-update forms -->
+<div id="hidden-forms"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* ── Filter table by status ── */
+  function filterTable(status, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#holiday-table tbody tr[data-status]').forEach(tr => {
+      tr.style.display = (status === 'all' || tr.dataset.status === status) ? '' : 'none';
+    });
+  }
+
+  /* ── Open exemption modal ── */
+  function openExemptModal(assetId, staffName, email) {
+    document.getElementById('exemptForm').action = '/holiday/update/' + assetId;
+    document.getElementById('exemptStaffName').textContent = staffName || 'this staff member';
+    document.getElementById('exemptEmail').value = email || '';
+    new bootstrap.Modal(document.getElementById('exemptModal')).show();
+  }
+
+  /* ── Quick status update (returned / reset to pending) ── */
+  function quickUpdate(assetId, status, staffName) {
+    const label = status === 'returned' ? 'Mark as Returned' : 'Reset to Pending';
+    if (!confirm(label + ' for ' + staffName + '?')) return;
+    const container = document.getElementById('hidden-forms');
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.action = '/holiday/update/' + assetId;
+    const s = document.createElement('input');
+    s.type = 'hidden'; s.name = 'status'; s.value = status;
+    if (status === 'returned') {
+      const d = document.createElement('input');
+      d.type = 'hidden'; d.name = 'returned_date';
+      d.value = new Date().toISOString().split('T')[0];
+      f.appendChild(d);
+    }
+    f.appendChild(s);
+    container.appendChild(f);
+    f.submit();
+  }
+</script>
+{% endblock %}

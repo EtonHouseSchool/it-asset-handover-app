@@ -5,21 +5,37 @@
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+  /* ── Hero banner ── */
   .hero-banner {
     background: linear-gradient(130deg, #0c2340 0%, #14375C 50%, #1a4f7a 100%);
-    border-radius: 20px; padding: 32px 36px; margin-bottom: 24px;
-    position: relative; overflow: hidden;
+    border-radius: 20px;
+    padding: 32px 36px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
   }
   .hero-banner::before {
-    content: ''; position: absolute; top: -60px; right: -60px;
-    width: 280px; height: 280px; border-radius: 50%; background: rgba(200,150,62,0.10);
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: rgba(200,150,62,0.10);
   }
   .hero-banner::after {
-    content: ''; position: absolute; bottom: -40px; right: 160px;
-    width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.04);
+    content: '';
+    position: absolute;
+    bottom: -40px; right: 160px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
   }
-  .hero-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
-  .hero-sub { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 0; }
+  .hero-title {
+    font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px;
+  }
+  .hero-sub {
+    font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 0;
+  }
   .hero-pill {
     display: inline-flex; align-items: center; gap: 6px;
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
@@ -27,35 +43,78 @@
     color: rgba(255,255,255,0.8); margin-bottom: 14px;
   }
   .hero-pill i { color: #C8963E; }
-  .stat-card-inner { display: flex; flex-direction: column; gap: 3px; }
-  .stat-trend { font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; margin-top: 4px; }
+
+  /* ── Stat cards ── */
+  .stat-card-inner {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .stat-trend {
+    font-size: 11px; font-weight: 600; display: inline-flex;
+    align-items: center; gap: 3px; margin-top: 4px;
+  }
   .stat-trend.up   { color: #10b981; }
   .stat-trend.info { color: #3b82f6; }
-  .chart-card .card-header { display: flex; align-items: center; justify-content: space-between; }
+
+  /* ── Chart cards ── */
+  .chart-card .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+  }
   .chart-card .card-header .header-icon {
     width: 30px; height: 30px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center; font-size: 14px;
   }
+
+  /* ── Campus cards ── */
   .campus-card {
-    border-radius: 16px; padding: 20px 24px; background: #fff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    background: #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+    border-left: 4px solid;
     transition: transform 0.2s, box-shadow 0.2s;
-    text-decoration: none; display: block; border: none;
+    text-decoration: none;
+    display: block;
+    border: none;
   }
-  .campus-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.1); text-decoration: none; }
-  .campus-card .c-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 4px; }
-  .campus-card .c-name { font-size: 17px; font-weight: 800; color: var(--primary); }
-  .campus-card .c-count { font-size: 32px; font-weight: 800; line-height: 1; }
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  .section-title { font-size: 15px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
-  .section-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-  .view-all-link { font-size: 12.5px; color: var(--primary); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 4px; opacity: 0.7; transition: opacity 0.2s; }
+  .campus-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+    text-decoration: none;
+  }
+  .campus-card .c-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 4px;
+  }
+  .campus-card .c-name {
+    font-size: 17px; font-weight: 800; color: var(--primary);
+  }
+  .campus-card .c-count {
+    font-size: 32px; font-weight: 800; line-height: 1;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 15px; font-weight: 700; color: var(--primary);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  }
+  .view-all-link {
+    font-size: 12.5px; color: var(--primary); font-weight: 600;
+    text-decoration: none; display: flex; align-items: center; gap: 4px;
+    opacity: 0.7; transition: opacity 0.2s;
+  }
   .view-all-link:hover { opacity: 1; color: var(--primary); }
 </style>
 {% endblock %}
 
 {% block content %}
 
+<!-- ── Hero ── -->
 <div class="hero-banner mb-4">
   <div class="row align-items-center" style="position:relative;z-index:1;">
     <div class="col-md-8">
@@ -76,6 +135,7 @@
   </div>
 </div>
 
+<!-- ── Stat Cards ── -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-xl-3">
     <div class="stat-card">
@@ -127,6 +187,7 @@
   </div>
 </div>
 
+<!-- ── Charts ── -->
 <div class="row g-3 mb-4">
   <div class="col-lg-4">
     <div class="card chart-card h-100">
@@ -161,17 +222,18 @@
           {% set color = '#10b981' if status == 'Assigned' else '#3b82f6' if status == 'In Store' else '#ef4444' if 'Lost' in status else '#f59e0b' %}
           <div class="mb-3">
             <div class="d-flex justify-content-between mb-1">
-              <span style="font-size:13px; font-weight:600;">{{ status }}</span>
+              <span style="font-size:13px; font-weight:600; color:var(--text);">{{ status }}</span>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:11px;color:var(--text-muted);">{{ pct }}%</span>
                 <span style="font-size:13px; font-weight:700; color:{{ color }};">{{ count }}</span>
               </div>
             </div>
             <div style="height:6px; background:#f1f5f9; border-radius:10px; overflow:hidden;">
-              <div style="width:{{ pct }}%; height:100%; background:{{ color }}; border-radius:10px;"></div>
+              <div style="width:{{ pct }}%; height:100%; background:{{ color }}; border-radius:10px; transition:width 1s ease;"></div>
             </div>
           </div>
         {% endfor %}
+
         <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
           <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted); margin-bottom:10px;">Assignment Rate</div>
           {% set assigned = by_status.get('Assigned', 0) %}
@@ -184,6 +246,7 @@
   </div>
 </div>
 
+<!-- ── Campus Cards ── -->
 <div class="row g-3 mb-4">
   {% for code, name, color, icon in [('EISG','K12 School','#3b82f6','bi-building'), ('EIPSG','Preschool','#10b981','bi-house-heart'), ('HQ','HQ Team','#C8963E','bi-briefcase')] %}
   <div class="col-md-4">
@@ -201,6 +264,7 @@
   {% endfor %}
 </div>
 
+<!-- ── Recent Assets ── -->
 <div class="card">
   <div class="card-header">
     <div class="section-header mb-0">
@@ -237,7 +301,7 @@
             </div>
           </td>
           <td><span style="font-family:monospace; font-size:12px; background:#f8fafc; padding:3px 8px; border-radius:6px; color:var(--primary); font-weight:600;">{{ a['serial_number'] or '—' }}</span></td>
-          <td style="font-weight:500; font-size:13.5px;">{{ a['assigned_to'] or '—' }}</td>
+          <td style="font-weight:500; font-size:13.5px;">{{ a['assigned_to'] or '<span style="color:var(--text-muted)">Unassigned</span>'|safe }}</td>
           <td><span class="campus-badge campus-{{ a['campus'] }}">{{ a['campus'] }}</span></td>
           <td>
             {% set s = a['status'].replace(' ','').replace('/','') %}
@@ -261,13 +325,22 @@
 <script>
 const typeData   = {{ by_type_json|safe }};
 const campusData = {{ campus_json|safe }};
+
 const palette = ['#14375C','#C8963E','#3b82f6','#10b981','#8b5cf6','#f59e0b','#ef4444'];
 
-const chartOpts = () => ({
+const chartOpts = (legendPos='bottom') => ({
   cutout: '68%',
   plugins: {
-    legend: { position: 'bottom', labels: { font: { size: 11, family: 'Inter', weight: '600' }, padding: 14, boxWidth: 10, boxHeight: 10 } },
-    tooltip: { backgroundColor: '#0c2340', titleFont: { family: 'Inter', size: 12 }, bodyFont: { family: 'Inter', size: 12 }, padding: 10, cornerRadius: 8 }
+    legend: {
+      position: legendPos,
+      labels: { font: { size: 11, family: 'Inter', weight: '600' }, padding: 14, boxWidth: 10, boxHeight: 10 }
+    },
+    tooltip: {
+      backgroundColor: '#0c2340',
+      titleFont: { family: 'Inter', size: 12 },
+      bodyFont:  { family: 'Inter', size: 12 },
+      padding: 10, cornerRadius: 8,
+    }
   }
 });
 
@@ -283,6 +356,7 @@ new Chart(document.getElementById('chartCampus'), {
   options: chartOpts()
 });
 
+// Animated counters
 document.querySelectorAll('.counter').forEach(el => {
   const target = parseInt(el.dataset.target);
   let current = 0;
