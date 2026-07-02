@@ -727,6 +727,48 @@ def holiday_update(asset_id):
     return redirect(url_for("holiday", label=holiday_label))
 
 
+@app.route("/holiday/debug")
+@login_required
+def holiday_debug():
+    import traceback
+    results = []
+    # Test 1: DB connection
+    try:
+        count = scalar("SELECT COUNT(*) FROM holiday_returns")
+        results.append(f"✅ holiday_returns table OK — {count} rows")
+    except Exception as e:
+        results.append(f"❌ holiday_returns table ERROR: {e}")
+
+    # Test 2: approved_by column
+    try:
+        query("SELECT approved_by FROM holiday_returns LIMIT 1")
+        results.append("✅ approved_by column exists")
+    except Exception as e:
+        results.append(f"❌ approved_by column MISSING: {e}")
+
+    # Test 3: mail config
+    mail_server = app.config.get("MAIL_SERVER")
+    mail_user   = app.config.get("MAIL_USERNAME")
+    results.append(f"📧 MAIL_SERVER = {mail_server!r}")
+    results.append(f"📧 MAIL_USERNAME = {mail_user!r}")
+
+    # Test 4: test INSERT
+    try:
+        execute("""
+            INSERT INTO holiday_returns
+                (asset_id, staff_name, staff_email, campus, holiday_label,
+                 status, reason, approved_by, returned_date, notes)
+            VALUES (:aid, :sn, :em, :ca, :lb, :st, :re, :ab, :rd, :nt)
+        """, dict(aid=99999, sn='TEST', em='test@test.com', ca='EIPSG',
+                  lb='DEBUG', st='pending', re='', ab='', rd='', nt=''))
+        execute("DELETE FROM holiday_returns WHERE asset_id=99999 AND holiday_label='DEBUG'",{})
+        results.append("✅ INSERT/DELETE test OK")
+    except Exception as e:
+        results.append(f"❌ INSERT test ERROR: {traceback.format_exc()}")
+
+    return "<br>".join(results) + "<br><br><a href='/holiday'>Back</a>"
+
+
 @app.route("/holiday/send-reminder", methods=["POST"])
 @login_required
 def holiday_send_reminder():
@@ -776,6 +818,19 @@ def holiday_send_reminder():
 
     flash(f"Reminder sent for {sent} pending asset(s).", "success")
     return redirect(url_for("holiday", label=holiday_label))
+
+
+@app.errorhandler(500)
+def internal_error(e):
+    import traceback
+    if current_user.is_authenticated:
+        return (
+            f"<h2>500 Error (visible to admins only)</h2>"
+            f"<pre style='background:#1a1a1a;color:#f87171;padding:20px;'>"
+            f"{traceback.format_exc()}</pre>"
+            f"<a href='/holiday'>← Back to Holiday Tracker</a>"
+        ), 500
+    return "<h1>Internal Server Error</h1>", 500
 
 
 if __name__ == "__main__":
