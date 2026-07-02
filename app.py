@@ -674,38 +674,10 @@ def holiday_update(asset_id):
                       ca=asset["campus"], lb=holiday_label, st=status,
                       re=reason, ab=approved_by, rd=returned_date, nt=notes))
 
-        # Send confirmation email
-        if status == "exempt" and staff_email:
-            if not app.config.get("MAIL_SERVER"):
-                flash(f"Exempt saved. ⚠️ No SMTP configured — email not sent.", "warning")
-            else:
-                first_name = asset["assigned_to"].split()[0]
-                cc_list = CAMPUS_CC.get(asset["campus"], [IT_MANAGER_EMAIL])
-                body = (
-                    f"Hi {first_name},\n\n"
-                    f"This is an automated email from your IT Department.\n\n"
-                    f"Please confirm whether you will keep your IT asset(s) with you "
-                    f"during the Holiday vacation or not:\n\n"
-                    f"  Asset Type : {asset['asset_type']}\n"
-                    f"  Serial No. : {asset['serial_number'] or 'N/A'}\n"
-                    f"  Model      : {asset.get('model_name') or 'N/A'}\n\n"
-                    f"If YES — please reply to this email with the Serial Number of "
-                    f"each asset you have with you.\n\n"
-                    f"If NO — please return the device to the IT Office before your "
-                    f"last working day (6th July 2026).\n\n"
-                    f"Best Regards,\nMarwen\n"
-                    f"IT Department — EtonHouse International School, Riyadh"
-                )
-                mail.send(Message(
-                    subject=f"[IT] Asset Confirmation Required — {holiday_label} Holiday",
-                    sender=app.config.get("MAIL_DEFAULT_SENDER", IT_MANAGER_EMAIL),
-                    recipients=[staff_email],
-                    cc=cc_list,
-                    body=body
-                ))
-                flash(f"✅ Confirmation email sent to {staff_email}.", "success")
+        if status == "exempt":
+            flash(f"✅ Exempt saved for {asset['assigned_to']}. Open Outlook to send the email.", "success")
         elif status == "returned":
-            flash("Asset marked as returned.", "success")
+            flash(f"✅ {asset['assigned_to']} marked as returned.", "success")
         else:
             flash("Status updated.", "success")
 
