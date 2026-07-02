@@ -759,6 +759,63 @@ def holiday_debug():
     return "<br>".join(results) + "<br><br><a href='/holiday'>Back</a>"
 
 
+@app.route("/holiday/log-response", methods=["POST"])
+@login_required
+def holiday_log_response():
+    import traceback as tb
+    holiday_label = "Summer 2026"
+    try:
+        asset_id      = int(request.form.get("asset_id", 0))
+        response      = request.form.get("response", "").strip()   # "keeping" or "returning"
+        notes         = request.form.get("notes", "").strip()
+        returned_date = request.form.get("returned_date", "")
+
+        if not asset_id or response not in ("keeping", "returning"):
+            flash("Invalid response data.", "danger")
+            return redirect(url_for("holiday"))
+
+        status = "exempt" if response == "keeping" else "returned"
+        if status == "returned" and not returned_date:
+            returned_date = __import__("datetime").date.today().isoformat()
+
+        rows = query("SELECT * FROM assets WHERE id=:id", {"id": asset_id})
+        if not rows:
+            flash("Asset not found.", "danger")
+            return redirect(url_for("holiday"))
+        asset = rows[0]
+        staff_email = STAFF_EMAIL_MAP.get(asset["assigned_to"], "")
+        approved_by = CAMPUS_APPROVERS.get(asset["campus"], "Marwen Khalifa — IT Manager")
+
+        existing = query(
+            "SELECT id FROM holiday_returns WHERE asset_id=:aid AND holiday_label=:label",
+            {"aid": asset_id, "label": holiday_label}
+        )
+        if existing:
+            execute("""
+                UPDATE holiday_returns
+                SET status=:st, notes=:nt, returned_date=:rd, approved_by=:ab
+                WHERE asset_id=:aid AND holiday_label=:label
+            """, dict(st=status, nt=notes, rd=returned_date, ab=approved_by,
+                      aid=asset_id, label=holiday_label))
+        else:
+            execute("""
+                INSERT INTO holiday_returns
+                    (asset_id, staff_name, staff_email, campus, holiday_label,
+                     status, approved_by, returned_date, notes)
+                VALUES (:aid, :sn, :em, :ca, :lb, :st, :ab, :rd, :nt)
+            """, dict(aid=asset_id, sn=asset["assigned_to"], em=staff_email,
+                      ca=asset["campus"], lb=holiday_label, st=status,
+                      ab=approved_by, rd=returned_date, nt=notes))
+
+        label = "Keeping (Exempt)" if status == "exempt" else "Returned"
+        flash(f"✅ Response logged for {asset['assigned_to']}: {label}.", "success")
+
+    except Exception:
+        flash(f"Error logging response: {tb.format_exc()}", "danger")
+
+    return redirect(url_for("holiday"))
+
+
 @app.route("/holiday/send-reminder", methods=["POST"])
 @login_required
 def holiday_send_reminder():
