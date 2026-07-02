@@ -511,65 +511,78 @@ def generate_pdf(record_id):
 # ─────────────────────────────────────────────
 
 # Staff email lookup — name as stored in assigned_to → email
+# Only staff on the approved list; anyone not here will show "No email"
 STAFF_EMAIL_MAP = {
-    # K12
-    "Teresa Lambrechts":              "Teresa.Lambrechts@etonhouse.edu.sa",
-    "Daniya Natha":                   "daniya.natha@etonhouse.edu.sa",
-    "Yunjie Sun":                     "yunjie.sun@etonhouse.edu.sa",
-    "Moncef Abdellawi":               "moncef.abdellawi@etonhouse.edu.sa",
-    "Meshal Al Otaibi":               "meshal.alotaibi@etonhouse.com.sa",
-    "Yasmeen Begum":                  "yasmeen.begum@etonhouse.edu.sa",
-    "Rosol Moqbel":                   "rosol.moqbel@etonhouse.edu.sa",
-    "Amina Reguiti":                  "amina.reguiti@etonhouse.edu.sa",
-    "Simon Gilroy":                   "simon.gilroy@etonhouse.edu.sa",
-    "Aya Areslan":                    "Aya.Areslan@etonhouse.edu.sa",
-    "Nurse K12":                      "nurse.inter@etonhouse.com.sa",
-    "Yasmin Mohamed":                 "Yasmin.Mohamed@etonhouse.edu.sa",
-    "Yasmin Mohamed (K12)":           "Yasmin.Mohamed@etonhouse.edu.sa",
-    "Hanan AlMusaily":                "Hanan.AlMusaily@etonhouse.edu.sa",
-    "Sahar Alsabbagh":                "Sahar.Alsabbagh@etonhouse.com.sa",
-    "Ayesha Gilroy":                  "ayesha.gilroy@etonhouse.edu.sa",
-    "Jacqueline Nahirney":            "Jacqueline.Nahirney@etonhouse.edu.sa",
-    "Jacqueline Elizabeth Nahirney":  "Jacqueline.Nahirney@etonhouse.edu.sa",
-    "Vildana Dupanovic":              "Vildana.Dupanovic@etonhouse.com.sa",
-    "Safia Hersi":                    "Safia.Hersi@etonhouse.edu.sa",
-    "Amira Elgharib":                 "Amira.Elgharib@etonhouse.edu.sa",
-    "Sadia Sidd":                     "Sadia.Sidd@etonhouse.edu.sa",
-    # Preschool
-    "Connor-Scahill Elizabeth Denise": "elizabeth.cscahill@etonhouse.edu.sa",
-    "Elizabeth Connor":                "elizabeth.cscahill@etonhouse.edu.sa",
-    "Elizabeth Denise":                "elizabeth.cscahill@etonhouse.edu.sa",
-    "Natasha Veronika":               "Natasha.Veronika@etonhouse.edu.sa",
-    "Natasha":                        "Natasha.Veronika@etonhouse.edu.sa",
-    "Atheer Al Anzan":                "Atheer.AlAnzan@etonhouse.edu.sa",
-    "Aisha Mirza":                    "Aisha.Mirza@etonhouse.edu.sa",
-    "Yasmin Rashid":                  "Yasmin.Rashid@etonhouse.edu.sa",
-    "Yasmin Rashid (Pre-School)":     "Yasmin.Rashid@etonhouse.edu.sa",
-    "Elanie VanDerNest":              "Elanie@etonhouse.edu.sa",
-    "Naziha Mardam Bik":              "Naziha.MardamBik@etonhouse.com.sa",
-    "Naziha Mardam":                  "Naziha.MardamBik@etonhouse.com.sa",
-    "Halima Khanom":                  "Halima.Khanom@etonhouse.edu.sa",
-    "Rachel Shadlock":                "Rachel.Shadlock@etonhouse.edu.sa",
-    "Abir Al Mashjary":               "Abir.AlMashjary@etonhouse.edu.sa",
-    "Hiba Shaarani":                  "Hiba.Shaarani@etonhouse.edu.sa",
-    "Huda Jmaian":                    "Huda.Jmaian@etonhouse.edu.sa",
-    "Preschool Nurse":                "nurse.preschool@etonhouse.edu.sa",
-    "Hodo Ali":                       "Hodo.Ali@etonhouse.edu.sa",
-    "Gaelin Kate Brown-Martin":       "Gaelin.Brown@etonhouse.edu.sa",
-    "Hollie Tickle":                  "Hollie@etonhouse.edu.sa",
+    # ── K12 ──
+    "Teresa Lambrechts":             "Teresa.Lambrechts@etonhouse.edu.sa",
+    "Daniya Natha":                  "daniya.natha@etonhouse.edu.sa",
+    "Yunjie Sun":                    "yunjie.sun@etonhouse.edu.sa",
+    "Moncef Abdellawi":              "moncef.abdellawi@etonhouse.edu.sa",
+    "Yasmeen Begum":                 "yasmeen.begum@etonhouse.edu.sa",
+    "Rosol Moqbel":                  "rosol.moqbel@etonhouse.edu.sa",
+    "Amina Reguiti":                 "amina.reguiti@etonhouse.edu.sa",
+    "Simon Gilroy":                  "simon.gilroy@etonhouse.edu.sa",
+    "Aya Areslan":                   "Aya.Areslan@etonhouse.edu.sa",
+    "Nurse K12":                     "nurse.inter@etonhouse.com.sa",
+    "Yasmin Mohamed":                "Yasmin.Mohamed@etonhouse.edu.sa",
+    "Yasmin Mohamed (K12)":          "Yasmin.Mohamed@etonhouse.edu.sa",
+    "Hanan AlMusaily":               "Hanan.AlMusaily@etonhouse.edu.sa",
+    "Ayesha Gilroy":                 "ayesha.gilroy@etonhouse.edu.sa",
+    "Jacqueline Nahirney":           "Jacqueline.Nahirney@etonhouse.edu.sa",
+    "Jacqueline Elizabeth Nahirney": "Jacqueline.Nahirney@etonhouse.edu.sa",
+    "Safia Hersi":                   "Safia.Hersi@etonhouse.edu.sa",
+    "Amira Elgharib":                "Amira.Elgharib@etonhouse.edu.sa",
+    # ── Preschool ──
+    "Natasha Veronika":              "Natasha.Veronika@etonhouse.edu.sa",
+    "Natasha":                       "Natasha.Veronika@etonhouse.edu.sa",
+    "Atheer Al Anzan":               "Atheer.AlAnzan@etonhouse.edu.sa",
+    "Aisha Mirza":                   "Aisha.Mirza@etonhouse.edu.sa",
+    "Yasmin Rashid":                 "Yasmin.Rashid@etonhouse.edu.sa",
+    "Yasmin Rashid (Pre-School)":    "Yasmin.Rashid@etonhouse.edu.sa",
+    "Elanie VanDerNest":             "Elanie@etonhouse.edu.sa",
+    "Elanie":                        "Elanie@etonhouse.edu.sa",
+    "Naziha Mardam Bik":             "Naziha.MardamBik@etonhouse.com.sa",
+    "Naziha Mardam":                 "Naziha.MardamBik@etonhouse.com.sa",
+    "Halima Khanom":                 "Halima.Khanom@etonhouse.edu.sa",
+    "Rachel Shadlock":               "Rachel.Shadlock@etonhouse.edu.sa",
+    "Abir Al Mashjary":              "Abir.AlMashjary@etonhouse.edu.sa",
+    "Hiba Shaarani":                 "Hiba.Shaarani@etonhouse.edu.sa",
+    "Huda Jmaian":                   "Huda.Jmaian@etonhouse.edu.sa",
+    "Preschool Nurse":               "nurse.preschool@etonhouse.edu.sa",
+    "Hodo Ali":                      "Hodo.Ali@etonhouse.edu.sa",
+    "Gaelin Kate Brown-Martin":      "Gaelin.Brown@etonhouse.edu.sa",
+    "Hollie Tickle":                 "Hollie@etonhouse.edu.sa",
+    "Hollie":                        "Hollie@etonhouse.edu.sa",
 }
 
-# Campus → principal approver
+# Campus → CC recipients for exemption emails
+CAMPUS_CC = {
+    "EISG":  ["Vildana.Dupanovic@etonhouse.com.sa", "Marwen.khalifa@etonhouse.com.sa"],
+    "EIPSG": ["elizabeth.cscahill@etonhouse.edu.sa",  "Marwen.khalifa@etonhouse.com.sa"],
+    "HQ":    ["Marwen.khalifa@etonhouse.com.sa"],
+    "EIEA":  ["Marwen.khalifa@etonhouse.com.sa"],
+}
+
+# Campus → display label for "Approved By" field
 CAMPUS_APPROVERS = {
     "EISG":  "Vildana Dupanovic — K12 Principal / Marwen Khalifa — IT Manager",
     "EIPSG": "Elizabeth Connor-Scahill — Preschool Principal / Marwen Khalifa — IT Manager",
     "HQ":    "Marwen Khalifa — IT Manager",
+    "EIEA":  "Marwen Khalifa — IT Manager",
 }
 
-# Staff excluded from holiday tracker
-EXCLUDED_STAFF = {"Huda Alamari"}
-
 IT_MANAGER_EMAIL = "Marwen.khalifa@etonhouse.com.sa"
+
+# Staff excluded from the holiday tracker entirely
+EXCLUDED_STAFF = {
+    "Huda Alamari",
+    "Vildana Dupanovic",      # K12 Principal — she is CC, not a tracked staff
+    "Connor-Scahill Elizabeth Denise",
+    "Elizabeth Connor",
+    "Sadia Sidd",
+    "Meshal Al Otaibi",
+    "Sahar Alsabbagh",
+}
 
 
 @app.route("/holiday")
@@ -663,11 +676,12 @@ def holiday_update(asset_id):
     if status == "exempt" and staff_email:
         try:
             first_name = asset["assigned_to"].split()[0]
+            cc_list = CAMPUS_CC.get(asset["campus"], [IT_MANAGER_EMAIL])
             body = (
                 f"Hi {first_name},\n\n"
                 f"This is an automated email from your IT Department.\n\n"
-                f"Please confirm that you will keep the following IT asset(s) with you "
-                f"during the Holiday vacation, or not:\n\n"
+                f"Please confirm whether you will keep your IT asset(s) with you "
+                f"during the Holiday vacation or not:\n\n"
                 f"  Asset Type : {asset['asset_type']}\n"
                 f"  Serial No. : {asset['serial_number'] or 'N/A'}\n"
                 f"  Model      : {asset.get('model_name') or 'N/A'}\n\n"
@@ -683,7 +697,7 @@ def holiday_update(asset_id):
                 subject=f"[IT] Asset Confirmation Required — {holiday_label} Holiday",
                 sender=os.environ.get("MAIL_DEFAULT_SENDER", "it@etonhouse.com.sa"),
                 recipients=[staff_email],
-                cc=[IT_MANAGER_EMAIL],
+                cc=cc_list,
                 body=body
             ))
             flash(f"Confirmation email sent to {staff_email}.", "success")
