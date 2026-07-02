@@ -214,6 +214,9 @@
     <button type="button" class="btn-primary-custom" onclick="openBulkOutlook()">
       <i class="bi bi-microsoft"></i> Draft Bulk Email in Outlook
     </button>
+    <button type="button" class="btn-accent-custom" data-bs-toggle="modal" data-bs-target="#logResponseModal">
+      <i class="bi bi-reply-fill"></i> Log Email Response
+    </button>
   </div>
 </div>
 
@@ -359,6 +362,74 @@
   </div>
 </div>
 
+<!-- ── Log Email Response Modal ── -->
+<div class="modal fade" id="logResponseModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="bi bi-reply-fill me-2" style="color:var(--accent);"></i>
+          Log Email Response
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('holiday_log_response') }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Staff Member <span style="color:#dc2626;">*</span></label>
+            <select name="asset_id" class="form-select" required id="logResponseSelect">
+              <option value="">— Select staff member —</option>
+              {% for row in assets %}
+              <option value="{{ row.id }}">
+                {{ row.assigned_to }} — {{ row.asset_type }} ({{ row.campus }})
+                {% if row.hr_status and row.hr_status != 'pending' %} [{{ row.hr_status }}]{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Their Response <span style="color:#dc2626;">*</span></label>
+            <div class="d-flex gap-3 mt-1">
+              <label class="d-flex align-items-center gap-2" style="cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="radio" name="response" value="keeping" required
+                       onchange="toggleReturnDate(false)"
+                       style="accent-color:#3b82f6; width:16px; height:16px;">
+                <span style="color:#1d4ed8;">
+                  <i class="bi bi-shield-check me-1"></i> Keeping the asset (Exempt)
+                </span>
+              </label>
+              <label class="d-flex align-items-center gap-2" style="cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="radio" name="response" value="returning"
+                       onchange="toggleReturnDate(true)"
+                       style="accent-color:#10b981; width:16px; height:16px;">
+                <span style="color:#166534;">
+                  <i class="bi bi-box-arrow-in-left me-1"></i> Returning the asset
+                </span>
+              </label>
+            </div>
+          </div>
+          <div class="mb-3" id="returnDateWrap" style="display:none;">
+            <label class="form-label">Return Date</label>
+            <input type="date" name="returned_date" class="form-control"
+                   value="{{ '' }}" id="returnDateInput" />
+          </div>
+          <div class="mb-1">
+            <label class="form-label">Notes <span style="font-weight:400; color:var(--text-muted);">(optional)</span></label>
+            <input type="text" name="notes" class="form-control"
+                   placeholder="e.g. Will return Monday morning, Serial confirmed…" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn-accent-custom">
+            <i class="bi bi-floppy-fill"></i> Save Response
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <!-- ── Exempt Modal ── -->
 <div class="modal fade" id="exemptModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
@@ -429,6 +500,16 @@
 
 {% block scripts %}
 <script>
+  /* ── Show/hide return date in log-response modal ── */
+  function toggleReturnDate(show) {
+    const wrap = document.getElementById('returnDateWrap');
+    wrap.style.display = show ? '' : 'none';
+    if (show && !document.getElementById('returnDateInput').value) {
+      document.getElementById('returnDateInput').value =
+        new Date().toISOString().split('T')[0];
+    }
+  }
+
   /* ── Filter table by status ── */
   function filterTable(status, btn) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
