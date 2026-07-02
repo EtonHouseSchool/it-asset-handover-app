@@ -631,6 +631,8 @@ def holiday():
 @app.route("/holiday/update/<int:asset_id>", methods=["POST"])
 @login_required
 def holiday_update(asset_id):
+    import traceback as tb
+    holiday_label = "Summer 2026"
     try:
         holiday_label = request.form.get("holiday_label", "Summer 2026")
         status        = request.form.get("status", "pending")
@@ -646,7 +648,6 @@ def holiday_update(asset_id):
             return redirect(url_for("holiday"))
         asset = rows[0]
 
-        # Auto-lookup email if not supplied
         if not staff_email:
             staff_email = STAFF_EMAIL_MAP.get(asset["assigned_to"], "")
 
@@ -673,23 +674,11 @@ def holiday_update(asset_id):
                       ca=asset["campus"], lb=holiday_label, st=status,
                       re=reason, ab=approved_by, rd=returned_date, nt=notes))
 
-    except Exception as db_err:
-        print("DB error in holiday_update:", db_err)
-        flash(f"Database error: {db_err}", "danger")
-        return redirect(url_for("holiday"))
-
-    # Send confirmation email to staff (only when marking Exempt)
-    if status == "exempt" and staff_email:
-        mail_configured = bool(app.config.get("MAIL_SERVER"))
-        if not mail_configured:
-            flash(
-                f"Status saved as Exempt for {asset['assigned_to']}. "
-                f"⚠️ Email NOT sent — SMTP not configured on Render. "
-                f"Add MAIL_SERVER, MAIL_USERNAME, MAIL_PASSWORD env vars.",
-                "warning"
-            )
-        else:
-            try:
+        # Send confirmation email
+        if status == "exempt" and staff_email:
+            if not app.config.get("MAIL_SERVER"):
+                flash(f"Exempt saved. ⚠️ No SMTP configured — email not sent.", "warning")
+            else:
                 first_name = asset["assigned_to"].split()[0]
                 cc_list = CAMPUS_CC.get(asset["campus"], [IT_MANAGER_EMAIL])
                 body = (
@@ -704,8 +693,7 @@ def holiday_update(asset_id):
                     f"each asset you have with you.\n\n"
                     f"If NO — please return the device to the IT Office before your "
                     f"last working day (6th July 2026).\n\n"
-                    f"Best Regards,\n"
-                    f"Marwen\n"
+                    f"Best Regards,\nMarwen\n"
                     f"IT Department — EtonHouse International School, Riyadh"
                 )
                 mail.send(Message(
@@ -716,15 +704,15 @@ def holiday_update(asset_id):
                     body=body
                 ))
                 flash(f"✅ Confirmation email sent to {staff_email}.", "success")
-            except Exception as mail_err:
-                import traceback as tb
-                err_detail = tb.format_exc()
-                print("Email error:", err_detail)
-                flash(f"Status saved as Exempt. Email failed — {type(mail_err).__name__}: {mail_err}", "warning")
-    elif status == "returned":
-        flash("Asset marked as returned.", "success")
-    else:
-        flash("Status updated.", "success")
+        elif status == "returned":
+            flash("Asset marked as returned.", "success")
+        else:
+            flash("Status updated.", "success")
+
+    except Exception:
+        err = tb.format_exc()
+        print("holiday_update error:\n", err)
+        flash(f"Error — {err}", "danger")
 
     return redirect(url_for("holiday", label=holiday_label))
 
