@@ -211,12 +211,9 @@
     <i class="bi bi-calendar-x-fill"></i> Return deadline: 6th July 2026
   </div>
   <div class="d-flex gap-2 flex-wrap">
-    <form method="POST" action="{{ url_for('holiday_send_reminder') }}" class="d-inline">
-      <button type="submit" class="btn-primary-custom"
-              onclick="return confirm('Send reminder email to ALL pending staff?')">
-        <i class="bi bi-envelope-fill"></i> Send Bulk Reminder
-      </button>
-    </form>
+    <button type="button" class="btn-primary-custom" onclick="openBulkOutlook()">
+      <i class="bi bi-microsoft"></i> Draft Bulk Email in Outlook
+    </button>
   </div>
 </div>
 
@@ -336,7 +333,7 @@
               {% endif %}
               {% if s != 'exempt' %}
               <button class="btn-action btn-mark-exempt"
-                      onclick="openExemptModal({{ row.id }}, '{{ row.assigned_to|replace("'","\\'")|replace('"',"") }}', '{{ row.staff_email or "" }}', '{{ row.campus_approver|replace("'","\\'")|replace('"',"") }}')">
+                      onclick="openExemptModal({{ row.id }}, '{{ row.assigned_to|replace("'","\\'")|replace('"',"") }}', '{{ row.staff_email or "" }}', '{{ row.campus_approver|replace("'","\\'")|replace('"',"") }}', '{{ row.campus or "" }}')">
                 <i class="bi bi-shield-plus"></i> Exempt
               </button>
               {% endif %}
@@ -375,10 +372,10 @@
       </div>
       <form method="POST" id="exemptForm" action="">
         <div class="modal-body">
-          <div class="d-flex align-items-center gap-2 mb-4 p-3" style="background:#f0fdf4; border-radius:10px; border:1px solid #bbf7d0;">
-            <i class="bi bi-send-fill" style="color:#10b981; font-size:18px;"></i>
-            <div style="font-size:12px; color:#166534; line-height:1.5;">
-              An automated email will be sent to <strong id="exemptStaffName"></strong> asking them to confirm whether they'll keep their IT asset during the holiday vacation.
+          <div class="d-flex align-items-center gap-2 mb-4 p-3" style="background:#eff6ff; border-radius:10px; border:1px solid #bfdbfe;">
+            <i class="bi bi-microsoft" style="color:#1d4ed8; font-size:18px;"></i>
+            <div style="font-size:12px; color:#1e40af; line-height:1.5;">
+              Clicking <strong>Save &amp; Open in Outlook</strong> will open a pre-written email draft for <strong id="exemptStaffName"></strong> in your Outlook. Just hit Send — the CC recipients (principal + IT Manager) are already filled in.
             </div>
           </div>
           <div class="mb-3">
@@ -416,8 +413,8 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn-accent-custom">
-            <i class="bi bi-send-fill"></i> Send Confirmation Email
+          <button type="button" class="btn-accent-custom" onclick="saveAndOpenOutlook()">
+            <i class="bi bi-microsoft"></i> Save &amp; Open in Outlook
           </button>
         </div>
       </form>
@@ -441,8 +438,13 @@
     });
   }
 
-  /* ── Open exemption modal ── */
-  function openExemptModal(assetId, staffName, email, approver) {
+  /* ── Exempt modal state ── */
+  let _exemptAssetId = null;
+  let _exemptCampus  = '';
+
+  function openExemptModal(assetId, staffName, email, approver, campus) {
+    _exemptAssetId = assetId;
+    _exemptCampus  = campus || '';
     document.getElementById('exemptForm').action = '/holiday/update/' + assetId;
     document.getElementById('exemptStaffName').textContent = staffName || 'this staff member';
 
@@ -453,6 +455,84 @@
 
     document.getElementById('exemptApprovedBy').value = approver || 'Marwen Khalifa — IT Manager';
     new bootstrap.Modal(document.getElementById('exemptModal')).show();
+  }
+
+  /* ── Save exempt status AND open Outlook for the individual staff member ── */
+  function saveAndOpenOutlook() {
+    const staffName  = document.getElementById('exemptStaffName').textContent;
+    const toEmail    = document.getElementById('exemptEmail').value.trim();
+    if (!toEmail) { alert('Please enter the staff email first.'); return; }
+
+    const firstName  = staffName.split(' ')[0];
+
+    // CC: principal for campus + IT manager
+    const campusCCMap = {
+      'EISG':  'Vildana.Dupanovic@etonhouse.com.sa,Marwen.khalifa@etonhouse.com.sa',
+      'EIPSG': 'elizabeth.cscahill@etonhouse.edu.sa,Marwen.khalifa@etonhouse.com.sa',
+      'HQ':    'Marwen.khalifa@etonhouse.com.sa',
+      'EIEA':  'Marwen.khalifa@etonhouse.com.sa',
+    };
+    const cc = campusCCMap[_exemptCampus] || 'Marwen.khalifa@etonhouse.com.sa';
+
+    const subject = '[IT] Asset Confirmation Required — Summer 2026 Holiday';
+    const body =
+      'Hi ' + firstName + ',\n\n' +
+      'This is an automated email from your IT Department.\n\n' +
+      'Please confirm whether you will keep your IT asset(s) with you during the Holiday vacation or not.\n\n' +
+      'If YES — please reply to this email with the Serial Number of each asset you have with you.\n\n' +
+      'If NO — please return the device to the IT Office before your last working day (6th July 2026).\n\n' +
+      'Best Regards,\n' +
+      'Marwen\n' +
+      'IT Department — EtonHouse International School, Riyadh';
+
+    const mailto = 'mailto:' + encodeURIComponent(toEmail)
+      + '?cc=' + encodeURIComponent(cc)
+      + '&subject=' + encodeURIComponent(subject)
+      + '&body=' + encodeURIComponent(body);
+
+    // Open Outlook draft
+    window.location.href = mailto;
+
+    // Save exempt status in background after a short delay
+    setTimeout(function() {
+      document.getElementById('exemptForm').submit();
+    }, 800);
+  }
+
+  /* ── Bulk Outlook draft for ALL pending staff ── */
+  function openBulkOutlook() {
+    const pendingEmails = [];
+    document.querySelectorAll('#holiday-table tbody tr[data-status="pending"]').forEach(tr => {
+      const chip = tr.querySelector('.email-chip');
+      if (chip) {
+        const txt = chip.textContent.trim();
+        if (txt && txt !== '—') pendingEmails.push(txt);
+      }
+    });
+
+    if (pendingEmails.length === 0) {
+      alert('No pending staff with email addresses found.');
+      return;
+    }
+
+    const subject = '[IT] Asset Return Required — Summer 2026 Holiday';
+    const body =
+      'Hi All,\n\n' +
+      'This is a reminder from the IT Department.\n\n' +
+      'The deadline for returning IT assets before the Summer 2026 holiday is 6th July 2026.\n\n' +
+      'Please return your device(s) to the IT Office before your last working day, or reply to this email ' +
+      'to confirm you have approval to keep your asset during the holiday.\n\n' +
+      'Best Regards,\n' +
+      'Marwen Khalifa\n' +
+      'IT Manager — EtonHouse International School, Riyadh';
+
+    // Use BCC so recipients don't see each other's addresses
+    const mailto = 'mailto:'
+      + '?bcc=' + encodeURIComponent(pendingEmails.join(','))
+      + '&subject=' + encodeURIComponent(subject)
+      + '&body=' + encodeURIComponent(body);
+
+    window.location.href = mailto;
   }
 
   /* ── Quick status update (returned / reset to pending) ── */
