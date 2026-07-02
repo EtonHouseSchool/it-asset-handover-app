@@ -717,8 +717,10 @@ def holiday_update(asset_id):
                 ))
                 flash(f"✅ Confirmation email sent to {staff_email}.", "success")
             except Exception as mail_err:
-                print("Email error:", mail_err)
-                flash(f"Status saved. Email failed: {mail_err}", "warning")
+                import traceback as tb
+                err_detail = tb.format_exc()
+                print("Email error:", err_detail)
+                flash(f"Status saved as Exempt. Email failed — {type(mail_err).__name__}: {mail_err}", "warning")
     elif status == "returned":
         flash("Asset marked as returned.", "success")
     else:
@@ -823,14 +825,12 @@ def holiday_send_reminder():
 @app.errorhandler(500)
 def internal_error(e):
     import traceback
-    if current_user.is_authenticated:
-        return (
-            f"<h2>500 Error (visible to admins only)</h2>"
-            f"<pre style='background:#1a1a1a;color:#f87171;padding:20px;'>"
-            f"{traceback.format_exc()}</pre>"
-            f"<a href='/holiday'>← Back to Holiday Tracker</a>"
-        ), 500
-    return "<h1>Internal Server Error</h1>", 500
+    return (
+        f"<h2 style='font-family:monospace;color:#c53030'>500 — Internal Server Error</h2>"
+        f"<pre style='background:#1a1a1a;color:#f87171;padding:20px;font-size:13px;"
+        f"border-radius:8px;overflow:auto'>{traceback.format_exc()}</pre>"
+        f"<p><a href='/holiday'>← Back to Holiday Tracker</a></p>"
+    ), 500
 
 
 if __name__ == "__main__":
