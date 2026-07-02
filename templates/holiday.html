@@ -139,7 +139,7 @@
     <i class="bi bi-sun-fill"></i> Summer 2025
   </div>
   <h1>Holiday Asset Return Tracker</h1>
-  <p>Track IT asset returns before the holiday break · Deadline: <strong style="color:#fbbf24;">4th July 2025</strong></p>
+  <p>Track IT asset returns before the holiday break · Deadline: <strong style="color:#fbbf24;">6th July 2026</strong></p>
 </div>
 
 <!-- Summary stats row -->
@@ -208,7 +208,7 @@
 <!-- Deadline + Send Reminder -->
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <div class="deadline-badge">
-    <i class="bi bi-calendar-x-fill"></i> Return deadline: 4th July 2025
+    <i class="bi bi-calendar-x-fill"></i> Return deadline: 6th July 2026
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <form method="POST" action="{{ url_for('holiday_send_reminder') }}" class="d-inline">
@@ -264,6 +264,9 @@
             <div class="staff-name">{{ row.assigned_to or '—' }}</div>
             {% if row.returned_date %}
             <div class="asset-sub"><i class="bi bi-calendar-check"></i> {{ row.returned_date }}</div>
+            {% endif %}
+            {% if row.staff_email %}
+            <div class="asset-sub" style="color:#64748b;"><i class="bi bi-envelope"></i> {{ row.staff_email }}</div>
             {% endif %}
           </td>
           <td>
@@ -333,7 +336,7 @@
               {% endif %}
               {% if s != 'exempt' %}
               <button class="btn-action btn-mark-exempt"
-                      onclick="openExemptModal({{ row.id }}, '{{ row.assigned_to|replace("'","") }}', '{{ row.staff_email or "" }}')">
+                      onclick="openExemptModal({{ row.id }}, '{{ row.assigned_to|replace("'","\\'")|replace('"',"") }}', '{{ row.staff_email or "" }}', '{{ row.campus_approver|replace("'","\\'")|replace('"',"") }}')">
                 <i class="bi bi-shield-plus"></i> Exempt
               </button>
               {% endif %}
@@ -372,26 +375,36 @@
       </div>
       <form method="POST" id="exemptForm" action="">
         <div class="modal-body">
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">
-            Staff member <strong id="exemptStaffName"></strong> will be authorised to keep the asset over the holiday.
-          </p>
+          <div class="d-flex align-items-center gap-2 mb-4 p-3" style="background:#f0fdf4; border-radius:10px; border:1px solid #bbf7d0;">
+            <i class="bi bi-send-fill" style="color:#10b981; font-size:18px;"></i>
+            <div style="font-size:12px; color:#166534; line-height:1.5;">
+              An automated email will be sent to <strong id="exemptStaffName"></strong> asking them to confirm whether they'll keep their IT asset during the holiday vacation.
+            </div>
+          </div>
           <div class="mb-3">
             <label class="form-label">Staff Email <span style="color:#dc2626;">*</span></label>
-            <input type="email" name="staff_email" id="exemptEmail" class="form-control"
-                   placeholder="staff@etonhouse.edu.sa" required />
-            <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">
-              An authorisation confirmation will be emailed to this address.
+            <div style="position:relative;">
+              <input type="email" name="staff_email" id="exemptEmail" class="form-control"
+                     placeholder="staff@etonhouse.edu.sa" required />
+              <span id="emailAutoTag" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                    font-size:10px; font-weight:700; color:#10b981; background:#f0fdf4;
+                    border:1px solid #bbf7d0; border-radius:10px; padding:2px 7px;">
+                <i class="bi bi-check-circle-fill"></i> Auto-filled
+              </span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Approved By</label>
+            <input type="text" name="approved_by" id="exemptApprovedBy" class="form-control"
+                   placeholder="Principal / IT Manager" />
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+              Auto-selected based on campus (Principal + IT Manager)
             </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Reason / Justification</label>
-            <textarea name="reason" class="form-control" rows="3"
-                      placeholder="e.g. Travelling for work, remote teaching commitments…"></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Approved By</label>
-            <input type="text" name="approved_by" class="form-control"
-                   placeholder="e.g. Erwan / IT Manager" />
+            <textarea name="reason" class="form-control" rows="2"
+                      placeholder="e.g. Remote teaching, curriculum planning…"></textarea>
           </div>
           <div>
             <label class="form-label">Notes</label>
@@ -399,11 +412,12 @@
                    placeholder="Any additional notes…" />
           </div>
           <input type="hidden" name="status" value="exempt" />
+          <input type="hidden" name="holiday_label" value="Summer 2026" />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn-accent-custom">
-            <i class="bi bi-shield-check-fill"></i> Authorise &amp; Notify Staff
+            <i class="bi bi-send-fill"></i> Send Confirmation Email
           </button>
         </div>
       </form>
@@ -428,10 +442,16 @@
   }
 
   /* ── Open exemption modal ── */
-  function openExemptModal(assetId, staffName, email) {
+  function openExemptModal(assetId, staffName, email, approver) {
     document.getElementById('exemptForm').action = '/holiday/update/' + assetId;
     document.getElementById('exemptStaffName').textContent = staffName || 'this staff member';
-    document.getElementById('exemptEmail').value = email || '';
+
+    const emailInput = document.getElementById('exemptEmail');
+    const autoTag    = document.getElementById('emailAutoTag');
+    emailInput.value = email || '';
+    autoTag.style.display = email ? 'inline-flex' : 'none';
+
+    document.getElementById('exemptApprovedBy').value = approver || 'Marwen Khalifa — IT Manager';
     new bootstrap.Modal(document.getElementById('exemptModal')).show();
   }
 
