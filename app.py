@@ -506,5 +506,161 @@ def generate_pdf(record_id):
                      mimetype="application/pdf")
 
 
+# ─────────────────────────────────────────────
+# HOLIDAY ASSET RETURN TRACKER
+# ─────────────────────────────────────────────
+@app.route("/holiday")
+@login_required
+def holiday():
+    holiday_label = request.args.get("label", "Summer 2025")
+
+    # All assigned assets
+    assigned = query("""
+        SELECT a.*, h.id as hr_id, h.status as hr_status,
+               h.staff_email, h.reason, h.returned_date, h.notes as hr_notes
+        FROM assets a
+        LEFT JOIN holiday_returns h
+            ON h.asset_id = a.id AND h.holiday_label = :label
+        WHERE a.status = 'Assigned' AND a.assigned_to IS NOT NULL AND a.assigned_to != ''
+        ORDER BY a.campus, a.asset_type, a.assigned_to
+    """, {"label": holiday_label})
+
+    # Summary counts
+    total   = len(assigned)
+    pending  = sum(1 for r in assigned if not r["hr_status"] or r["hr_status"] == "pending")
+    exempt   = sum(1 for r in assigned if r["hr_status"] == "exempt")
+    returned = sum(1 for r in assigned if r["hr_status"] == "returned")
+
+    return render_template("holiday.html",
+        assets=assigned, holiday_label=holiday_label,
+        total=total, pending=pending, exempt=exempt, returned=returned,
+        campuses=CAMPUSES)
+
+
+@app.route("/holiday/update/<int:asset_id>", methods=["POST"])
+@login_required
+def holiday_update(asset_id):
+    holiday_label = request.form.get("holiday_label", "Summer 2025")
+    status        = request.form.get("status")
+    staff_email   = request.form.get("staff_email", "").strip()
+    reason        = request.form.get("reason", "").strip()
+    notes         = request.form.get("notes", "").strip()
+    returned_date = request.form.get("returned_date", "")
+
+    # Get asset info for email
+    rows = query("SELECT * FROM assets WHERE id=:id", {"id": asset_id})
+    if not rows:
+        flash("Asset not found.", "danger")
+        return redirect(url_for("holiday"))
+    asset = rows[0]
+
+    # Upsert holiday_returns record
+    existing = query(
+        "SELECT id FROM holiday_returns WHERE asset_id=:aid AND holiday_label=:label",
+        {"aid": asset_id, "label": holiday_label}
+    )
+    if existing:
+        execute("""
+            UPDATE holiday_returns
+            SET status=:st, staff_email=:em, reason=:re, notes=:no,
+                returned_date=:rd, approved_by=:ab
+            WHERE asset_id=:aid AND holiday_label=:label
+        """, dict(st=status, em=staff_email, re=reason, no=notes,
+                  rd=returned_date, ab=current_user.id,
+                  aid=asset_id, label=holiday_label))
+    else:
+        execute("""
+            INSERT INTO holiday_returns
+                (asset_id, staff_name, staff_email, campus, holiday_label,
+                 status, reason, approved_by, returned_date, notes)
+            VALUES (:an, :sn, :em, :ca, :lb, :st, :re, :ab, :rd, :no)
+        """, dict(an=asset_id, sn=asset["assigned_to"], em=staff_email,
+                  ca=asset["campus"], lb=holiday_label, st=status,
+                  re=reason, ab=current_user.id, rd=returned_date, no=notes))
+
+    # Send exemption confirmation email if exempt
+    if status == "exempt" and staff_email:
+        try:
+            body = (
+                f"Dear {asset['assigned_to']},\n\n"
+                f"This is to confirm that you have been approved to keep the following IT asset "
+                f"during the {holiday_label} holiday period:\n\n"
+                f"  Asset Type : {asset['asset_type']}\n"
+                f"  Serial No. : {asset['serial_number']}\n"
+                f"  Model      : {asset.get('model_name','')}\n\n"
+                f"Reason : {reason}\n\n"
+                f"Please ensure the device is kept safe and returned to the IT Office "
+                f"upon your return.\n\n"
+                f"Best regards,\n{current_user.id.capitalize()}\nEtonHouse IT Department"
+            )
+            mail.send(Message(
+                subject=f"IT Asset Holiday Exemption — {asset['asset_type']} ({asset['serial_number']})",
+                sender=os.environ.get("MAIL_DEFAULT_SENDER", "it@etonhouse.com.sa"),
+                recipients=[staff_email],
+                body=body
+            ))
+            flash(f"Exemption confirmed and email sent to {staff_email}.", "success")
+        except Exception as e:
+            print("Email error:", e)
+            flash("Status saved. Email could not be sent.", "warning")
+    elif status == "returned":
+        flash(f"Asset marked as returned.", "success")
+    else:
+        flash("Status updated.", "success")
+
+    return redirect(url_for("holiday", label=holiday_label))
+
+
+@app.route("/holiday/send-reminder", methods=["POST"])
+@login_required
+def holiday_send_reminder():
+    holiday_label = request.form.get("holiday_label", "Summer 2025")
+    deadline      = request.form.get("deadline", "Friday, 4th July")
+
+    # Get all pending assigned assets
+    pending = query("""
+        SELECT a.*, h.status as hr_status
+        FROM assets a
+        LEFT JOIN holiday_returns h
+            ON h.asset_id = a.id AND h.holiday_label = :label
+        WHERE a.status = 'Assigned'
+          AND a.assigned_to IS NOT NULL AND a.assigned_to != ''
+          AND (h.status IS NULL OR h.status = 'pending')
+    """, {"label": holiday_label})
+
+    sent = 0
+    for asset in pending:
+        # Try to find email from handover records
+        hr = query(
+            "SELECT * FROM handover WHERE serial=:sn ORDER BY id DESC LIMIT 1",
+            {"sn": asset["serial_number"]}
+        )
+        recipient = os.environ.get("MAIL_DEFAULT_SENDER", "marwen.khalifa@etonhouse.com.sa")
+        try:
+            body = (
+                f"Dear {asset['assigned_to']},\n\n"
+                f"This is a reminder to return the following IT asset to the IT Office "
+                f"by {deadline}:\n\n"
+                f"  Asset Type : {asset['asset_type']}\n"
+                f"  Serial No. : {asset['serial_number']}\n"
+                f"  Model      : {asset.get('model_name','')}\n\n"
+                f"If you require this device during the holiday period for work purposes, "
+                f"please contact the IT Department immediately to request an exemption.\n\n"
+                f"Best regards,\n{current_user.id.capitalize()}\nEtonHouse IT Department"
+            )
+            mail.send(Message(
+                subject=f"Reminder: IT Asset Return by {deadline} — EtonHouse",
+                sender=os.environ.get("MAIL_DEFAULT_SENDER", "it@etonhouse.com.sa"),
+                recipients=[recipient],
+                body=body
+            ))
+            sent += 1
+        except Exception as e:
+            print("Reminder email error:", e)
+
+    flash(f"Reminder sent for {sent} pending asset(s).", "success")
+    return redirect(url_for("holiday", label=holiday_label))
+
+
 if __name__ == "__main__":
     app.run(debug=True)

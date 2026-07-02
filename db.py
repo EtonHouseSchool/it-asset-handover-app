@@ -1,8 +1,14 @@
+"""
+Database abstraction layer.
+- Local development: SQLite (database.db)
+- Production (Render): PostgreSQL via DATABASE_URL env var (Supabase / Neon / etc.)
+"""
 import os
 from sqlalchemy import create_engine, text
 
 _DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///database.db")
 
+# Supabase / Render give postgres:// but SQLAlchemy needs postgresql://
 if _DATABASE_URL.startswith("postgres://"):
     _DATABASE_URL = _DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
@@ -12,11 +18,14 @@ _engine = create_engine(
     pool_pre_ping=True,
 )
 
+
 def get_conn():
     return _engine.connect()
 
+
 def _pk():
     return "SERIAL" if "postgresql" in _DATABASE_URL else "INTEGER"
+
 
 def init_db():
     pk = _pk()
@@ -64,12 +73,30 @@ def init_db():
                 created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
             )
         """))
+        conn.execute(text(f"""
+            CREATE TABLE IF NOT EXISTS holiday_returns (
+                id {pk} PRIMARY KEY,
+                asset_id INTEGER NOT NULL,
+                staff_name TEXT,
+                staff_email TEXT,
+                campus TEXT,
+                holiday_label TEXT DEFAULT 'Summer 2025',
+                status TEXT DEFAULT 'pending',
+                reason TEXT,
+                approved_by TEXT,
+                returned_date TEXT,
+                notes TEXT,
+                created_at TEXT DEFAULT (CURRENT_TIMESTAMP)
+            )
+        """))
         conn.commit()
+
 
 def is_seeded():
     with _engine.connect() as conn:
         result = conn.execute(text("SELECT COUNT(*) FROM assets")).scalar()
         return result > 0
+
 
 def rows_as_dicts(result):
     keys = result.keys()
