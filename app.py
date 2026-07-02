@@ -631,79 +631,94 @@ def holiday():
 @app.route("/holiday/update/<int:asset_id>", methods=["POST"])
 @login_required
 def holiday_update(asset_id):
-    holiday_label = request.form.get("holiday_label", "Summer 2026")
-    status        = request.form.get("status")
-    staff_email   = request.form.get("staff_email", "").strip()
-    reason        = request.form.get("reason", "").strip()
-    notes         = request.form.get("notes", "").strip()
-    returned_date = request.form.get("returned_date", "")
-    approved_by   = request.form.get("approved_by", "").strip() or IT_MANAGER_EMAIL
+    try:
+        holiday_label = request.form.get("holiday_label", "Summer 2026")
+        status        = request.form.get("status", "pending")
+        staff_email   = request.form.get("staff_email", "").strip()
+        reason        = request.form.get("reason", "").strip()
+        notes         = request.form.get("notes", "").strip()
+        returned_date = request.form.get("returned_date", "")
+        approved_by   = request.form.get("approved_by", "").strip() or IT_MANAGER_EMAIL
 
-    rows = query("SELECT * FROM assets WHERE id=:id", {"id": asset_id})
-    if not rows:
-        flash("Asset not found.", "danger")
+        rows = query("SELECT * FROM assets WHERE id=:id", {"id": asset_id})
+        if not rows:
+            flash("Asset not found.", "danger")
+            return redirect(url_for("holiday"))
+        asset = rows[0]
+
+        # Auto-lookup email if not supplied
+        if not staff_email:
+            staff_email = STAFF_EMAIL_MAP.get(asset["assigned_to"], "")
+
+        existing = query(
+            "SELECT id FROM holiday_returns WHERE asset_id=:aid AND holiday_label=:label",
+            {"aid": asset_id, "label": holiday_label}
+        )
+        if existing:
+            execute("""
+                UPDATE holiday_returns
+                SET status=:st, staff_email=:em, reason=:re, notes=:nt,
+                    returned_date=:rd, approved_by=:ab
+                WHERE asset_id=:aid AND holiday_label=:label
+            """, dict(st=status, em=staff_email, re=reason, nt=notes,
+                      rd=returned_date, ab=approved_by,
+                      aid=asset_id, label=holiday_label))
+        else:
+            execute("""
+                INSERT INTO holiday_returns
+                    (asset_id, staff_name, staff_email, campus, holiday_label,
+                     status, reason, approved_by, returned_date, notes)
+                VALUES (:aid, :sn, :em, :ca, :lb, :st, :re, :ab, :rd, :nt)
+            """, dict(aid=asset_id, sn=asset["assigned_to"], em=staff_email,
+                      ca=asset["campus"], lb=holiday_label, st=status,
+                      re=reason, ab=approved_by, rd=returned_date, nt=notes))
+
+    except Exception as db_err:
+        print("DB error in holiday_update:", db_err)
+        flash(f"Database error: {db_err}", "danger")
         return redirect(url_for("holiday"))
-    asset = rows[0]
 
-    # Auto-lookup email if not provided
-    if not staff_email:
-        staff_email = STAFF_EMAIL_MAP.get(asset["assigned_to"], "")
-
-    existing = query(
-        "SELECT id FROM holiday_returns WHERE asset_id=:aid AND holiday_label=:label",
-        {"aid": asset_id, "label": holiday_label}
-    )
-    if existing:
-        execute("""
-            UPDATE holiday_returns
-            SET status=:st, staff_email=:em, reason=:re, notes=:no,
-                returned_date=:rd, approved_by=:ab
-            WHERE asset_id=:aid AND holiday_label=:label
-        """, dict(st=status, em=staff_email, re=reason, no=notes,
-                  rd=returned_date, ab=approved_by,
-                  aid=asset_id, label=holiday_label))
-    else:
-        execute("""
-            INSERT INTO holiday_returns
-                (asset_id, staff_name, staff_email, campus, holiday_label,
-                 status, reason, approved_by, returned_date, notes)
-            VALUES (:an, :sn, :em, :ca, :lb, :st, :re, :ab, :rd, :no)
-        """, dict(an=asset_id, sn=asset["assigned_to"], em=staff_email,
-                  ca=asset["campus"], lb=holiday_label, st=status,
-                  re=reason, ab=approved_by, rd=returned_date, no=notes))
-
-    # Send confirmation request email to staff
+    # Send confirmation email to staff (only when marking Exempt)
     if status == "exempt" and staff_email:
-        try:
-            first_name = asset["assigned_to"].split()[0]
-            cc_list = CAMPUS_CC.get(asset["campus"], [IT_MANAGER_EMAIL])
-            body = (
-                f"Hi {first_name},\n\n"
-                f"This is an automated email from your IT Department.\n\n"
-                f"Please confirm whether you will keep your IT asset(s) with you "
-                f"during the Holiday vacation or not:\n\n"
-                f"  Asset Type : {asset['asset_type']}\n"
-                f"  Serial No. : {asset['serial_number'] or 'N/A'}\n"
-                f"  Model      : {asset.get('model_name') or 'N/A'}\n\n"
-                f"If YES — please reply to this email with the Serial Number of each "
-                f"asset you have with you.\n\n"
-                f"If NO — please return the device to the IT Office before your last "
-                f"working day (6th July 2026).\n\n"
-                f"Best Regards,\n"
-                f"Marwen\n"
-                f"IT Department — EtonHouse International School, Riyadh"
+        mail_configured = bool(app.config.get("MAIL_SERVER"))
+        if not mail_configured:
+            flash(
+                f"Status saved as Exempt for {asset['assigned_to']}. "
+                f"⚠️ Email NOT sent — SMTP not configured on Render. "
+                f"Add MAIL_SERVER, MAIL_USERNAME, MAIL_PASSWORD env vars.",
+                "warning"
             )
-            mail.send(Message(
-                subject=f"[IT] Asset Confirmation Required — {holiday_label} Holiday",
-                sender=os.environ.get("MAIL_DEFAULT_SENDER", "it@etonhouse.com.sa"),
-                recipients=[staff_email],
-                cc=cc_list,
-                body=body
-            ))
-            flash(f"Confirmation email sent to {staff_email}.", "success")
-        except Exception as e:
-            print("Email error:", e)
-            flash("Status saved. Email could not be sent — check mail config.", "warning")
+        else:
+            try:
+                first_name = asset["assigned_to"].split()[0]
+                cc_list = CAMPUS_CC.get(asset["campus"], [IT_MANAGER_EMAIL])
+                body = (
+                    f"Hi {first_name},\n\n"
+                    f"This is an automated email from your IT Department.\n\n"
+                    f"Please confirm whether you will keep your IT asset(s) with you "
+                    f"during the Holiday vacation or not:\n\n"
+                    f"  Asset Type : {asset['asset_type']}\n"
+                    f"  Serial No. : {asset['serial_number'] or 'N/A'}\n"
+                    f"  Model      : {asset.get('model_name') or 'N/A'}\n\n"
+                    f"If YES — please reply to this email with the Serial Number of "
+                    f"each asset you have with you.\n\n"
+                    f"If NO — please return the device to the IT Office before your "
+                    f"last working day (6th July 2026).\n\n"
+                    f"Best Regards,\n"
+                    f"Marwen\n"
+                    f"IT Department — EtonHouse International School, Riyadh"
+                )
+                mail.send(Message(
+                    subject=f"[IT] Asset Confirmation Required — {holiday_label} Holiday",
+                    sender=app.config.get("MAIL_DEFAULT_SENDER", IT_MANAGER_EMAIL),
+                    recipients=[staff_email],
+                    cc=cc_list,
+                    body=body
+                ))
+                flash(f"✅ Confirmation email sent to {staff_email}.", "success")
+            except Exception as mail_err:
+                print("Email error:", mail_err)
+                flash(f"Status saved. Email failed: {mail_err}", "warning")
     elif status == "returned":
         flash("Asset marked as returned.", "success")
     else:
