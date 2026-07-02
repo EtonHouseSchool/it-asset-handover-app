@@ -509,15 +509,78 @@ def generate_pdf(record_id):
 # ─────────────────────────────────────────────
 # HOLIDAY ASSET RETURN TRACKER
 # ─────────────────────────────────────────────
+
+# Staff email lookup — name as stored in assigned_to → email
+STAFF_EMAIL_MAP = {
+    # K12
+    "Teresa Lambrechts":              "Teresa.Lambrechts@etonhouse.edu.sa",
+    "Daniya Natha":                   "daniya.natha@etonhouse.edu.sa",
+    "Yunjie Sun":                     "yunjie.sun@etonhouse.edu.sa",
+    "Moncef Abdellawi":               "moncef.abdellawi@etonhouse.edu.sa",
+    "Meshal Al Otaibi":               "meshal.alotaibi@etonhouse.com.sa",
+    "Yasmeen Begum":                  "yasmeen.begum@etonhouse.edu.sa",
+    "Rosol Moqbel":                   "rosol.moqbel@etonhouse.edu.sa",
+    "Amina Reguiti":                  "amina.reguiti@etonhouse.edu.sa",
+    "Simon Gilroy":                   "simon.gilroy@etonhouse.edu.sa",
+    "Aya Areslan":                    "Aya.Areslan@etonhouse.edu.sa",
+    "Nurse K12":                      "nurse.inter@etonhouse.com.sa",
+    "Yasmin Mohamed":                 "Yasmin.Mohamed@etonhouse.edu.sa",
+    "Yasmin Mohamed (K12)":           "Yasmin.Mohamed@etonhouse.edu.sa",
+    "Hanan AlMusaily":                "Hanan.AlMusaily@etonhouse.edu.sa",
+    "Sahar Alsabbagh":                "Sahar.Alsabbagh@etonhouse.com.sa",
+    "Ayesha Gilroy":                  "ayesha.gilroy@etonhouse.edu.sa",
+    "Jacqueline Nahirney":            "Jacqueline.Nahirney@etonhouse.edu.sa",
+    "Jacqueline Elizabeth Nahirney":  "Jacqueline.Nahirney@etonhouse.edu.sa",
+    "Vildana Dupanovic":              "Vildana.Dupanovic@etonhouse.com.sa",
+    "Safia Hersi":                    "Safia.Hersi@etonhouse.edu.sa",
+    "Amira Elgharib":                 "Amira.Elgharib@etonhouse.edu.sa",
+    "Sadia Sidd":                     "Sadia.Sidd@etonhouse.edu.sa",
+    # Preschool
+    "Connor-Scahill Elizabeth Denise": "elizabeth.cscahill@etonhouse.edu.sa",
+    "Elizabeth Connor":                "elizabeth.cscahill@etonhouse.edu.sa",
+    "Elizabeth Denise":                "elizabeth.cscahill@etonhouse.edu.sa",
+    "Natasha Veronika":               "Natasha.Veronika@etonhouse.edu.sa",
+    "Natasha":                        "Natasha.Veronika@etonhouse.edu.sa",
+    "Atheer Al Anzan":                "Atheer.AlAnzan@etonhouse.edu.sa",
+    "Aisha Mirza":                    "Aisha.Mirza@etonhouse.edu.sa",
+    "Yasmin Rashid":                  "Yasmin.Rashid@etonhouse.edu.sa",
+    "Yasmin Rashid (Pre-School)":     "Yasmin.Rashid@etonhouse.edu.sa",
+    "Elanie VanDerNest":              "Elanie@etonhouse.edu.sa",
+    "Naziha Mardam Bik":              "Naziha.MardamBik@etonhouse.com.sa",
+    "Naziha Mardam":                  "Naziha.MardamBik@etonhouse.com.sa",
+    "Halima Khanom":                  "Halima.Khanom@etonhouse.edu.sa",
+    "Rachel Shadlock":                "Rachel.Shadlock@etonhouse.edu.sa",
+    "Abir Al Mashjary":               "Abir.AlMashjary@etonhouse.edu.sa",
+    "Hiba Shaarani":                  "Hiba.Shaarani@etonhouse.edu.sa",
+    "Huda Jmaian":                    "Huda.Jmaian@etonhouse.edu.sa",
+    "Preschool Nurse":                "nurse.preschool@etonhouse.edu.sa",
+    "Hodo Ali":                       "Hodo.Ali@etonhouse.edu.sa",
+    "Gaelin Kate Brown-Martin":       "Gaelin.Brown@etonhouse.edu.sa",
+    "Hollie Tickle":                  "Hollie@etonhouse.edu.sa",
+}
+
+# Campus → principal approver
+CAMPUS_APPROVERS = {
+    "EISG":  "Vildana Dupanovic — K12 Principal / Marwen Khalifa — IT Manager",
+    "EIPSG": "Elizabeth Connor-Scahill — Preschool Principal / Marwen Khalifa — IT Manager",
+    "HQ":    "Marwen Khalifa — IT Manager",
+}
+
+# Staff excluded from holiday tracker
+EXCLUDED_STAFF = {"Huda Alamari"}
+
+IT_MANAGER_EMAIL = "Marwen.khalifa@etonhouse.com.sa"
+
+
 @app.route("/holiday")
 @login_required
 def holiday():
-    holiday_label = request.args.get("label", "Summer 2025")
+    holiday_label = request.args.get("label", "Summer 2026")
 
-    # All assigned assets
     assigned = query("""
         SELECT a.*, h.id as hr_id, h.status as hr_status,
-               h.staff_email, h.reason, h.returned_date, h.notes as hr_notes
+               h.staff_email, h.reason, h.returned_date, h.notes as hr_notes,
+               h.approved_by
         FROM assets a
         LEFT JOIN holiday_returns h
             ON h.asset_id = a.id AND h.holiday_label = :label
@@ -525,8 +588,20 @@ def holiday():
         ORDER BY a.campus, a.asset_type, a.assigned_to
     """, {"label": holiday_label})
 
-    # Summary counts
-    total   = len(assigned)
+    # Filter out excluded staff and only show iPad/Laptop
+    assigned = [
+        r for r in assigned
+        if r["assigned_to"] not in EXCLUDED_STAFF
+        and r["asset_type"] in ("iPad", "Laptop")
+    ]
+
+    # Enrich each row with auto-looked-up email and campus approver
+    for r in assigned:
+        if not r["staff_email"]:
+            r["staff_email"] = STAFF_EMAIL_MAP.get(r["assigned_to"], "")
+        r["campus_approver"] = CAMPUS_APPROVERS.get(r["campus"], CAMPUS_APPROVERS["HQ"])
+
+    total    = len(assigned)
     pending  = sum(1 for r in assigned if not r["hr_status"] or r["hr_status"] == "pending")
     exempt   = sum(1 for r in assigned if r["hr_status"] == "exempt")
     returned = sum(1 for r in assigned if r["hr_status"] == "returned")
@@ -534,27 +609,33 @@ def holiday():
     return render_template("holiday.html",
         assets=assigned, holiday_label=holiday_label,
         total=total, pending=pending, exempt=exempt, returned=returned,
-        campuses=CAMPUSES)
+        campuses=CAMPUSES,
+        staff_email_map=STAFF_EMAIL_MAP,
+        campus_approvers=CAMPUS_APPROVERS,
+        it_manager_email=IT_MANAGER_EMAIL)
 
 
 @app.route("/holiday/update/<int:asset_id>", methods=["POST"])
 @login_required
 def holiday_update(asset_id):
-    holiday_label = request.form.get("holiday_label", "Summer 2025")
+    holiday_label = request.form.get("holiday_label", "Summer 2026")
     status        = request.form.get("status")
     staff_email   = request.form.get("staff_email", "").strip()
     reason        = request.form.get("reason", "").strip()
     notes         = request.form.get("notes", "").strip()
     returned_date = request.form.get("returned_date", "")
+    approved_by   = request.form.get("approved_by", "").strip() or IT_MANAGER_EMAIL
 
-    # Get asset info for email
     rows = query("SELECT * FROM assets WHERE id=:id", {"id": asset_id})
     if not rows:
         flash("Asset not found.", "danger")
         return redirect(url_for("holiday"))
     asset = rows[0]
 
-    # Upsert holiday_returns record
+    # Auto-lookup email if not provided
+    if not staff_email:
+        staff_email = STAFF_EMAIL_MAP.get(asset["assigned_to"], "")
+
     existing = query(
         "SELECT id FROM holiday_returns WHERE asset_id=:aid AND holiday_label=:label",
         {"aid": asset_id, "label": holiday_label}
@@ -566,7 +647,7 @@ def holiday_update(asset_id):
                 returned_date=:rd, approved_by=:ab
             WHERE asset_id=:aid AND holiday_label=:label
         """, dict(st=status, em=staff_email, re=reason, no=notes,
-                  rd=returned_date, ab=current_user.id,
+                  rd=returned_date, ab=approved_by,
                   aid=asset_id, label=holiday_label))
     else:
         execute("""
@@ -576,35 +657,41 @@ def holiday_update(asset_id):
             VALUES (:an, :sn, :em, :ca, :lb, :st, :re, :ab, :rd, :no)
         """, dict(an=asset_id, sn=asset["assigned_to"], em=staff_email,
                   ca=asset["campus"], lb=holiday_label, st=status,
-                  re=reason, ab=current_user.id, rd=returned_date, no=notes))
+                  re=reason, ab=approved_by, rd=returned_date, no=notes))
 
-    # Send exemption confirmation email if exempt
+    # Send confirmation request email to staff
     if status == "exempt" and staff_email:
         try:
+            first_name = asset["assigned_to"].split()[0]
             body = (
-                f"Dear {asset['assigned_to']},\n\n"
-                f"This is to confirm that you have been approved to keep the following IT asset "
-                f"during the {holiday_label} holiday period:\n\n"
+                f"Hi {first_name},\n\n"
+                f"This is an automated email from your IT Department.\n\n"
+                f"Please confirm that you will keep the following IT asset(s) with you "
+                f"during the Holiday vacation, or not:\n\n"
                 f"  Asset Type : {asset['asset_type']}\n"
-                f"  Serial No. : {asset['serial_number']}\n"
-                f"  Model      : {asset.get('model_name','')}\n\n"
-                f"Reason : {reason}\n\n"
-                f"Please ensure the device is kept safe and returned to the IT Office "
-                f"upon your return.\n\n"
-                f"Best regards,\n{current_user.id.capitalize()}\nEtonHouse IT Department"
+                f"  Serial No. : {asset['serial_number'] or 'N/A'}\n"
+                f"  Model      : {asset.get('model_name') or 'N/A'}\n\n"
+                f"If YES — please reply to this email with the Serial Number of each "
+                f"asset you have with you.\n\n"
+                f"If NO — please return the device to the IT Office before your last "
+                f"working day (6th July 2026).\n\n"
+                f"Best Regards,\n"
+                f"Marwen\n"
+                f"IT Department — EtonHouse International School, Riyadh"
             )
             mail.send(Message(
-                subject=f"IT Asset Holiday Exemption — {asset['asset_type']} ({asset['serial_number']})",
+                subject=f"[IT] Asset Confirmation Required — {holiday_label} Holiday",
                 sender=os.environ.get("MAIL_DEFAULT_SENDER", "it@etonhouse.com.sa"),
                 recipients=[staff_email],
+                cc=[IT_MANAGER_EMAIL],
                 body=body
             ))
-            flash(f"Exemption confirmed and email sent to {staff_email}.", "success")
+            flash(f"Confirmation email sent to {staff_email}.", "success")
         except Exception as e:
             print("Email error:", e)
-            flash("Status saved. Email could not be sent.", "warning")
+            flash("Status saved. Email could not be sent — check mail config.", "warning")
     elif status == "returned":
-        flash(f"Asset marked as returned.", "success")
+        flash("Asset marked as returned.", "success")
     else:
         flash("Status updated.", "success")
 
