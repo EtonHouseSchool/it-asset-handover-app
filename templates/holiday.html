@@ -499,22 +499,8 @@
     }, 800);
   }
 
-  /* ── Bulk Outlook draft for ALL pending staff ── */
+  /* ── Bulk Outlook draft — sends to K12 and Preschool group addresses ── */
   function openBulkOutlook() {
-    const pendingEmails = [];
-    document.querySelectorAll('#holiday-table tbody tr[data-status="pending"]').forEach(tr => {
-      const chip = tr.querySelector('.email-chip');
-      if (chip) {
-        const txt = chip.textContent.trim();
-        if (txt && txt !== '—') pendingEmails.push(txt);
-      }
-    });
-
-    if (pendingEmails.length === 0) {
-      alert('No pending staff with email addresses found.');
-      return;
-    }
-
     const subject = '[IT] Asset Return Required — Summer 2026 Holiday';
     const body =
       'Hi All,\n\n' +
@@ -526,9 +512,9 @@
       'Marwen Khalifa\n' +
       'IT Manager — EtonHouse International School, Riyadh';
 
-    // Use BCC so recipients don't see each other's addresses
-    const mailto = 'mailto:'
-      + '?bcc=' + encodeURIComponent(pendingEmails.join(','))
+    const to = 'k12@etonhouse.edu.sa,preschool@etonhouse.edu.sa';
+
+    const mailto = 'mailto:' + encodeURIComponent(to)
       + '&subject=' + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(body);
 
