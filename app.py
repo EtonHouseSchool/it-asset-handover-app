@@ -413,16 +413,6 @@ def handover_form():
                 "</pre><p><a href='/handover'>← Try Again</a> | <a href='/'>Dashboard</a></p>"
             ), 200
 
-        try:
-            mail.send(Message(
-                subject="New IT Asset Handover — EtonHouse",
-                sender=os.environ.get("MAIL_DEFAULT_SENDER", "it@etonhouse.com.sa"),
-                recipients=["marwen.khalifa@etonhouse.com.sa"],
-                body=f"New Handover\n\nEmployee: {en}\nCampus: {ca}\nAsset: {it} | {mo}\nSerial: {se}"
-            ))
-        except Exception as mail_err:
-            print("Handover email error:", mail_err, file=sys.stderr)
-
         flash("✅ Handover submitted and recorded.", "success")
         return redirect(url_for("records"))
 
