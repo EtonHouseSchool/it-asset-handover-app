@@ -64,7 +64,7 @@
                 <i class="bi bi-file-pdf"></i> PDF
               </a>
               <form method="POST" action="{{ url_for('delete_handover', record_id=r['id']) }}" class="d-inline"
-                    onsubmit="return confirm('Delete handover record #{{ r[\'id\'] }} for {{ r[\'employee_name\'] or \'this record\' }}?')">
+                    onsubmit="return confirm('Delete this handover record?')">
                 <button type="submit" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:12px;" title="Delete">
                   <i class="bi bi-trash"></i>
                 </button>
