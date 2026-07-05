@@ -372,24 +372,31 @@ def asset_detail(asset_id):
 @login_required
 def handover_form():
     if request.method == "POST":
-        f = request.form
-        execute("""
-            INSERT INTO handover (date, employee_name, iqama, job_title, department, campus,
-                asset_receipt_date, return_date, notes, item_name, model, serial,
-                color, condition, accessories)
-            VALUES (:da,:en,:iq,:jt,:de,:ca,:ar,:rd,:no,:it,:mo,:se,:co,:cn,:ac)
-        """, dict(da=f.get("date"), en=f.get("employee_name"), iq=f.get("iqama"),
-                  jt=f.get("job_title"), de=f.get("department"), ca=f.get("campus"),
-                  ar=f.get("asset_receipt_date"), rd=f.get("return_date"), no=f.get("notes"),
-                  it=f.get("item_name"), mo=f.get("model"), se=f.get("serial"),
-                  co=f.get("color"), cn=f.get("condition"), ac=f.get("accessories")))
-
-        body = (f"New IT Asset Handover\n\nDate: {f.get('date')}\nEmployee: {f.get('employee_name')}\n"
-                f"Campus: {f.get('campus')}\nDept: {f.get('department')}\n\n"
-                f"Asset: {f.get('item_name')} | {f.get('model')}\nSerial: {f.get('serial')}\n"
-                f"Condition: {f.get('condition')}\nAccessories: {f.get('accessories')}\n"
-                f"Notes: {f.get('notes')}")
+        import traceback as _tb
         try:
+            f = request.form
+            execute("""
+                INSERT INTO handover (date, employee_name, iqama, job_title, department, campus,
+                    asset_receipt_date, return_date, notes, item_name, model, serial,
+                    color, condition, accessories)
+                VALUES (:da,:en,:iq,:jt,:de,:ca,:ar,:rd,:no,:it,:mo,:se,:co,:cn,:ac)
+            """, dict(da=f.get("date"), en=f.get("employee_name"), iq=f.get("iqama"),
+                      jt=f.get("job_title"), de=f.get("department"), ca=f.get("campus"),
+                      ar=f.get("asset_receipt_date"), rd=f.get("return_date"), no=f.get("notes"),
+                      it=f.get("item_name"), mo=f.get("model"), se=f.get("serial"),
+                      co=f.get("color"), cn=f.get("condition"), ac=f.get("accessories")))
+        except Exception:
+            err = _tb.format_exc()
+            print("Handover INSERT error:\n", err)
+            flash(f"Error saving handover: {err}", "danger")
+            return redirect(url_for("handover_form"))
+
+        try:
+            body = (f"New IT Asset Handover\n\nDate: {f.get('date')}\nEmployee: {f.get('employee_name')}\n"
+                    f"Campus: {f.get('campus')}\nDept: {f.get('department')}\n\n"
+                    f"Asset: {f.get('item_name')} | {f.get('model')}\nSerial: {f.get('serial')}\n"
+                    f"Condition: {f.get('condition')}\nAccessories: {f.get('accessories')}\n"
+                    f"Notes: {f.get('notes')}")
             mail.send(Message(subject="New IT Asset Handover — EtonHouse",
                               sender=os.environ.get("MAIL_DEFAULT_SENDER","it@etonhouse.com.sa"),
                               recipients=["marwen.khalifa@etonhouse.com.sa"], body=body))
