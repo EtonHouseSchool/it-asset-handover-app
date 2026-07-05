@@ -402,7 +402,8 @@ def handover_form():
                               recipients=["marwen.khalifa@etonhouse.com.sa"], body=body))
         except Exception as e:
             print("Email error:", e)
-        return render_template("submitted.html")
+        flash("✅ Handover submitted successfully and recorded.", "success")
+        return redirect(url_for("records"))
 
     assets_list = query("SELECT serial_number, assigned_to, asset_type FROM assets WHERE status='Assigned' ORDER BY asset_type")
     return render_template("handover.html",
