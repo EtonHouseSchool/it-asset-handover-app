@@ -373,36 +373,57 @@ def asset_detail(asset_id):
 def handover_form():
     if request.method == "POST":
         import traceback as _tb
+        import sys
+        err_msg = None
         try:
             f = request.form
-            execute("""
-                INSERT INTO handover (date, employee_name, iqama, job_title, department, campus,
-                    asset_receipt_date, return_date, notes, item_name, model, serial,
-                    color, condition, accessories)
-                VALUES (:da,:en,:iq,:jt,:de,:ca,:ar,:rd,:no,:it,:mo,:se,:co,:cn,:ac)
-            """, dict(da=f.get("date"), en=f.get("employee_name"), iq=f.get("iqama"),
-                      jt=f.get("job_title"), de=f.get("department"), ca=f.get("campus"),
-                      ar=f.get("asset_receipt_date"), rd=f.get("return_date"), no=f.get("notes"),
-                      it=f.get("item_name"), mo=f.get("model"), se=f.get("serial"),
-                      co=f.get("color"), cn=f.get("condition"), ac=f.get("accessories")))
+            da = f.get("date", "")
+            en = f.get("employee_name", "")
+            iq = f.get("iqama", "")
+            jt = f.get("job_title", "")
+            de = f.get("department", "")
+            ca = f.get("campus", "")
+            ar = f.get("asset_receipt_date", "")
+            rd = f.get("return_date", "")
+            no = f.get("notes", "")
+            it = f.get("item_name", "")
+            mo = f.get("model", "")
+            se = f.get("serial", "")
+            co = f.get("color", "")
+            cn = f.get("condition", "")
+            ac = f.get("accessories", "")
+
+            with db._engine.connect() as conn:
+                conn.execute(text("""
+                    INSERT INTO handover (date, employee_name, iqama, job_title, department, campus,
+                        asset_receipt_date, return_date, notes, item_name, model, serial,
+                        color, condition, accessories)
+                    VALUES (:da,:en,:iq,:jt,:de,:ca,:ar,:rd,:no,:it,:mo,:se,:co,:cn,:ac)
+                """), dict(da=da, en=en, iq=iq, jt=jt, de=de, ca=ca,
+                           ar=ar, rd=rd, no=no, it=it, mo=mo, se=se,
+                           co=co, cn=cn, ac=ac))
+                conn.commit()
         except Exception:
-            err = _tb.format_exc()
-            print("Handover INSERT error:\n", err)
-            flash(f"Error saving handover: {err}", "danger")
-            return redirect(url_for("handover_form"))
+            err_msg = _tb.format_exc()
+            print("Handover INSERT error:\n", err_msg, file=sys.stderr)
+            return (
+                "<h2 style='color:red;font-family:sans-serif'>Handover Save Error</h2>"
+                "<pre style='background:#111;color:#f87171;padding:20px;border-radius:8px;overflow:auto'>"
+                + err_msg +
+                "</pre><p><a href='/handover'>← Try Again</a> | <a href='/'>Dashboard</a></p>"
+            ), 200
 
         try:
-            body = (f"New IT Asset Handover\n\nDate: {f.get('date')}\nEmployee: {f.get('employee_name')}\n"
-                    f"Campus: {f.get('campus')}\nDept: {f.get('department')}\n\n"
-                    f"Asset: {f.get('item_name')} | {f.get('model')}\nSerial: {f.get('serial')}\n"
-                    f"Condition: {f.get('condition')}\nAccessories: {f.get('accessories')}\n"
-                    f"Notes: {f.get('notes')}")
-            mail.send(Message(subject="New IT Asset Handover — EtonHouse",
-                              sender=os.environ.get("MAIL_DEFAULT_SENDER","it@etonhouse.com.sa"),
-                              recipients=["marwen.khalifa@etonhouse.com.sa"], body=body))
-        except Exception as e:
-            print("Email error:", e)
-        flash("✅ Handover submitted successfully and recorded.", "success")
+            mail.send(Message(
+                subject="New IT Asset Handover — EtonHouse",
+                sender=os.environ.get("MAIL_DEFAULT_SENDER", "it@etonhouse.com.sa"),
+                recipients=["marwen.khalifa@etonhouse.com.sa"],
+                body=f"New Handover\n\nEmployee: {en}\nCampus: {ca}\nAsset: {it} | {mo}\nSerial: {se}"
+            ))
+        except Exception as mail_err:
+            print("Handover email error:", mail_err, file=sys.stderr)
+
+        flash("✅ Handover submitted and recorded.", "success")
         return redirect(url_for("records"))
 
     assets_list = query("SELECT serial_number, assigned_to, asset_type FROM assets WHERE status='Assigned' ORDER BY asset_type")
