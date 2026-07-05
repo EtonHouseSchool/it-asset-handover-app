@@ -697,6 +697,25 @@ def holiday_update(asset_id):
     return redirect(url_for("holiday", label=holiday_label))
 
 
+@app.route("/handover/test")
+@login_required
+def handover_test():
+    import traceback
+    try:
+        execute("""
+            INSERT INTO handover (date, employee_name, iqama, job_title, department, campus,
+                asset_receipt_date, return_date, notes, item_name, model, serial,
+                color, condition, accessories)
+            VALUES (:da,:en,:iq,:jt,:de,:ca,:ar,:rd,:no,:it,:mo,:se,:co,:cn,:ac)
+        """, dict(da="2026-01-01", en="TEST_ENTRY", iq="000", jt="test", de="IT", ca="EISG",
+                  ar="2026-01-01", rd="", no="", it="Laptop", mo="Test", se="TEST-SN-001",
+                  co="Black", cn="Good", ac=""))
+        execute("DELETE FROM handover WHERE employee_name='TEST_ENTRY'", {})
+        return "✅ Handover INSERT works fine — database is OK. The issue is elsewhere."
+    except Exception:
+        return "<pre style='color:red'>" + traceback.format_exc() + "</pre>"
+
+
 @app.route("/holiday/debug")
 @login_required
 def holiday_debug():
@@ -850,12 +869,14 @@ def holiday_send_reminder():
 @app.errorhandler(500)
 def internal_error(e):
     import traceback
-    return (
-        f"<h2 style='font-family:monospace;color:#c53030'>500 — Internal Server Error</h2>"
-        f"<pre style='background:#1a1a1a;color:#f87171;padding:20px;font-size:13px;"
-        f"border-radius:8px;overflow:auto'>{traceback.format_exc()}</pre>"
-        f"<p><a href='/holiday'>← Back to Holiday Tracker</a></p>"
-    ), 500
+    tb = traceback.format_exc()
+    html = (
+        "<h2 style='font-family:monospace;color:#c53030'>500 — Internal Server Error</h2>"
+        "<pre style='background:#1a1a1a;color:#f87171;padding:20px;font-size:13px;"
+        "border-radius:8px;overflow:auto'>" + tb + "</pre>"
+        "<p><a href='/'>← Back to Dashboard</a></p>"
+    )
+    return html, 200
 
 
 if __name__ == "__main__":
