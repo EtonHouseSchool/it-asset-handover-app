@@ -59,9 +59,17 @@
             {% else %}—{% endif %}
           </td>
           <td>
-            <a href="{{ url_for('generate_pdf', record_id=r['id']) }}" class="btn btn-sm btn-outline-danger" style="border-radius:8px; font-size:12px;" title="Download PDF">
-              <i class="bi bi-file-pdf"></i> PDF
-            </a>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('generate_pdf', record_id=r['id']) }}" class="btn btn-sm btn-outline-danger" style="border-radius:8px; font-size:12px;" title="Download PDF">
+                <i class="bi bi-file-pdf"></i> PDF
+              </a>
+              <form method="POST" action="{{ url_for('delete_handover', record_id=r['id']) }}" class="d-inline"
+                    onsubmit="return confirm('Delete handover record #{{ r[\'id\'] }} for {{ r[\'employee_name\'] or \'this record\' }}?')">
+                <button type="submit" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:12px;" title="Delete">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
           </td>
         </tr>
         {% else %}

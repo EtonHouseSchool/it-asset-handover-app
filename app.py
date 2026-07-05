@@ -442,6 +442,14 @@ def records():
     return render_template("records.html", rows=rows)
 
 
+@app.route("/records/<int:record_id>/delete", methods=["POST"])
+@login_required
+def delete_handover(record_id):
+    execute("DELETE FROM handover WHERE id=:id", {"id": record_id})
+    flash("Record deleted.", "info")
+    return redirect(url_for("records"))
+
+
 @app.route("/records/<int:record_id>/pdf")
 @login_required
 def generate_pdf(record_id):
