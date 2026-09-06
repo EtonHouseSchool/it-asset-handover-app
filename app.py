@@ -885,6 +885,68 @@ def holiday_send_reminder():
     return redirect(url_for("holiday", label=holiday_label))
 
 
+@app.route("/admin/migrate-ipads")
+@login_required
+def migrate_ipads():
+    IPADS = [
+        ("SD99WMJ9W39", "MD4G4AB/A", "Hanan Almusaily",    "EISG",  "Assigned",    ""),
+        ("SFWHCWC123L", "MD4G4AB/A", "Hollie Tickle",       "EISG",  "Assigned",    ""),
+        ("SJXJLYP2WNN", "MD4G4AB/A", "Chelsea Jones",       "EISG",  "Lost/Stolen", "Teacher left without returning it"),
+        ("SK21QYGQPFX", "MD4G4AB/A", "Fardousa Hassan",     "EISG",  "Assigned",    ""),
+        ("SKG5LXN10VM", "MD4G4AB/A", "Ayesha Gilroy",       "EISG",  "Assigned",    ""),
+        ("SKR934Y34DK", "MD4G4AB/A", "Karina Smith",        "EISG",  "Assigned",    ""),
+        ("SL3369CC42Y", "MD4G4AB/A", "Yunjie Sun",          "EISG",  "Lost/Stolen", "Theft from school"),
+        ("SFQVDXW1610", "MD4G4AB/A", "Mildred Ijedinma",    "EISG",  "Assigned",    ""),
+        ("SH6PYPYD4VD", "MD4G4AB/A", "Samantha Coble",      "EISG",  "Assigned",    ""),
+        ("SCXLG9GY045", "MD4G4AB/A", "Alexus Bailey",       "EISG",  "Assigned",    ""),
+        ("SDJWR29FY9C", "MD4G4AB/A", "Natasha Veronika",    "EIPSG", "Assigned",    ""),
+        ("SG909J07Q4K", "MD4G4AB/A", "Teresa Lambrechts",   "EISG",  "Assigned",    ""),
+        ("SH2TV6XG2QY", "MD4G4AB/A", "Yasmin Rashid",       "EIPSG", "Assigned",    ""),
+        ("SJ23T775144", "MD4G4AB/A", "Elanie Van Der Nest", "EIPSG", "Assigned",    ""),
+        ("SJY71XCGWJR", "MD4G4AB/A", "Aisha Mirza",         "EIPSG", "Assigned",    ""),
+        ("SK23WT3J9KY", "MD4G4AB/A", "Halima Khanom",       "EIPSG", "Assigned",    ""),
+        ("SLM7J2GJY7C", "MD4G4AB/A", "Twane Coaker",        "EISG",  "Lost/Stolen", "Teacher left without returning it"),
+        ("SXX73VNXT9P", "MD4G4AB/A", "Daniya Natha",        "EISG",  "Lost/Stolen", "Theft from school"),
+        ("CFQ4H60C6K",  "MD4H4AB/A", "Hodo Ali",            "EIPSG", "Assigned",    ""),
+        ("D3N9R2KR45",  "MD4H4AB/A", "Jacqueline Nahirney", "EISG",  "Assigned",    ""),
+        ("MK2LYYCWY3",  "MD4H4AB/A", "IT Store",            "EISG",  "In Store",    ""),
+        ("D76G9Q03CR",  "MD4H4AB/A", "Gaelin Brown",        "EIPSG", "Assigned",    ""),
+    ]
+    MODEL = "iPad WiFi 256GB SLV-SAU"
+    inserted = updated = 0
+    log = []
+    try:
+        with db._engine.connect() as conn:
+            for serial, part, assigned_to, campus, status, remarks in IPADS:
+                existing = conn.execute(text("SELECT id FROM assets WHERE serial_number=:s"), {"s": serial}).fetchone()
+                if existing:
+                    conn.execute(text("""
+                        UPDATE assets SET assigned_to=:a, campus=:c, status=:st,
+                            remarks=:r, model_name=:m, part_number=:p, asset_type='iPad'
+                        WHERE serial_number=:s
+                    """), {"a": assigned_to, "c": campus, "st": status, "r": remarks, "m": MODEL, "p": part, "s": serial})
+                    log.append(f"UPDATED  {serial} → {assigned_to} ({status})")
+                    updated += 1
+                else:
+                    conn.execute(text("""
+                        INSERT INTO assets (asset_type, serial_number, part_number, model_name,
+                            assigned_to, campus, status, remarks)
+                        VALUES ('iPad',:s,:p,:m,:a,:c,:st,:r)
+                    """), {"s": serial, "p": part, "m": MODEL, "a": assigned_to, "c": campus, "st": status, "r": remarks})
+                    log.append(f"INSERTED {serial} → {assigned_to} ({status})")
+                    inserted += 1
+            conn.commit()
+        summary = f"Done: {inserted} inserted, {updated} updated."
+        log_html = "".join(f"<div style='color:{'#16a34a' if 'INSERTED' in l else '#1d4ed8'}'>{l}</div>" for l in log)
+        return (f"<h2 style='font-family:monospace'>iPad Migration</h2>"
+                f"<pre style='background:#f8fafc;padding:20px;border-radius:8px;font-family:monospace'>{chr(10).join(log)}</pre>"
+                f"<p><strong>{summary}</strong></p>"
+                f"<a href='/assets?type=iPad'>← View iPads</a>"), 200
+    except Exception:
+        import traceback
+        return f"<pre>{traceback.format_exc()}</pre>", 200
+
+
 @app.errorhandler(500)
 def internal_error(e):
     import traceback
